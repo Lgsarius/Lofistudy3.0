@@ -603,24 +603,24 @@ export default function LandingPage() {
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a
                 href="https://github.com/yourusername/lofistudy"
-                target="_blank"
-                rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <FaGithub className="w-6 h-6" />
-              </a>
-              <a
+        </a>
+        <a
                 href="https://discord.gg/lofistudy"
-                target="_blank"
-                rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <FaDiscord className="w-6 h-6" />
-              </a>
-              <a
+        </a>
+        <a
                 href="https://twitter.com/lofistudy"
-                target="_blank"
-                rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <FaTwitter className="w-6 h-6" />

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaTags } from 'react-icons/fa';
+import { useState, useEffect, useRef } from 'react';
+import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaTags, FaCalendar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { useSettingsStore } from '@/lib/store/settings';
 import { useAuthStore } from '@/lib/store/auth';
@@ -61,6 +61,9 @@ export function Notes() {
   const [editContent, setEditContent] = useState(notes[0].content);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const folders = Array.from(new Set(notes.map(note => note.folder).filter(Boolean)));
 
@@ -159,7 +162,11 @@ export function Notes() {
     }
   };
 
-  const deleteNote = async (id: string) => {
+  const handleDeleteNote = async (id: string) => {
+    setShowDeleteConfirm(id);
+  };
+
+  const confirmDelete = async (id: string) => {
     if (!user || notes.length === 1 || id === defaultNote.id) return;
 
     try {
@@ -170,6 +177,7 @@ export function Notes() {
         setSelectedNoteId(newSelectedNote.id);
         setEditContent(newSelectedNote.content);
       }
+      setShowDeleteConfirm(null);
     } catch (error) {
       console.error('Error deleting note:', error);
     }
@@ -210,6 +218,18 @@ export function Notes() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditing, editContent]);
 
+  // Add click outside handler for calendar
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+        setShowCalendar(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -223,7 +243,7 @@ export function Notes() {
   return (
     <div className={`h-full flex ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
       {/* Sidebar */}
-      <div className={`w-72 flex flex-col border-r ${theme === 'dark' ? 'border-white/10 bg-gray-900/50' : 'border-black/10 bg-white/50'} backdrop-blur-xl`}>
+      <div className={`w-72 flex flex-col border-r ${theme === 'dark' ? 'border-white/10 bg-gray-900/50' : 'border-black/10 bg-white/50'} backdrop-blur-xl [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20`}>
         {/* Search and New Note */}
         <div className="p-4 space-y-4">
           <div className="relative">
@@ -292,129 +312,228 @@ export function Notes() {
         </div>
 
         {/* Notes List */}
-        <div className="flex-1 overflow-auto">
-          <AnimatePresence>
-            {filteredNotes.map((note) => (
-              <motion.div
-                key={note.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                onClick={() => {
-                  setSelectedNoteId(note.id);
-                  setEditContent(note.content);
-                }}
-                className={`w-full p-4 text-left border-b cursor-pointer ${
-                  theme === 'dark' ? 'border-white/10' : 'border-black/10'
-                } ${
-                  selectedNoteId === note.id
-                    ? theme === 'dark'
-                      ? 'bg-white/20'
-                      : 'bg-black/10'
-                    : ''
-                } hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/5'} transition-colors relative group`}
-              >
-                <h3 className="font-medium truncate pr-8">{note.title}</h3>
-                <p className={`text-sm truncate ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
-                  {note.content.replace(/^#\s*[^\n]*\n?/, '').slice(0, 100)}
-                </p>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className={`text-xs ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
-                    {note.lastModified.toLocaleDateString()}
-                  </span>
-                  {note.folder && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${theme === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
-                      {note.folder}
-                    </span>
-                  )}
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
+          {filteredNotes.map((note) => (
+            <motion.div
+              key={note.id}
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`relative group p-3 rounded-lg cursor-pointer transition-colors ${
+                selectedNoteId === note.id
+                  ? `bg-${accentColor}/20`
+                  : theme === 'dark'
+                  ? 'hover:bg-white/5'
+                  : 'hover:bg-black/5'
+              }`}
+              onClick={() => {
+                setSelectedNoteId(note.id);
+                setEditContent(note.content);
+              }}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium truncate">{note.title}</h3>
+                  <p className={`text-sm truncate ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
+                    {new Date(note.lastModified).toLocaleDateString()}
+                  </p>
                 </div>
-                {notes.length > 1 && note.id !== defaultNote.id && (
-                  <button
+                {note.id !== defaultNote.id && (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity ${
+                      theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                    }`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteNote(note.id);
+                      handleDeleteNote(note.id);
                     }}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 rounded-full ${
-                      theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
-                    } transition-all`}
                   >
-                    <FaTrash className="text-red-500" />
-                  </button>
+                    <FaTrash className="w-4 h-4 text-red-500" />
+                  </motion.button>
                 )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 
-      {/* Editor/Preview */}
-      <div className="flex-1 flex flex-col">
-        {/* Toolbar */}
-        <div className={`h-12 flex items-center justify-between px-4 border-b ${
-          theme === 'dark' ? 'border-white/10' : 'border-black/10'
-        }`}>
-          <div className="flex items-center space-x-2">
-            <FaMarkdown className={theme === 'dark' ? 'text-white/40' : 'text-black/40'} />
-            <span className={`text-sm ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
-              Markdown supported
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isEditing ? (
-              <>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {currentNote && (
+          <>
+            <div className="p-4 border-b backdrop-blur-xl flex items-center justify-between space-x-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={handleSave}
+                        className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+                        style={{ color: accentColor }}
+                        title="Save (⌘S)"
+                      >
+                        <FaSave />
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+                        style={{ color: accentColor }}
+                        title="Preview (⌘E)"
+                      >
+                        <FaEye />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
+                      style={{ color: accentColor }}
+                      title="Edit (⌘E)"
+                    >
+                      <FaEdit />
+                    </button>
+                  )}
+                </div>
+                <div className={`text-sm ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
+                  <FaMarkdown className="inline-block mr-2" />
+                  Markdown supported
+                </div>
+              </div>
+              
+              <div className="relative">
                 <button
-                  onClick={handleSave}
-                  className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'} transition-colors`}
-                  style={{ color: accentColor }}
-                  title="Save (⌘S)"
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className={`px-3 py-1.5 rounded-lg flex items-center space-x-2 transition-colors ${
+                    theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                  }`}
                 >
-                  <FaSave />
+                  <FaCalendar className={theme === 'dark' ? 'text-white/60' : 'text-black/60'} />
+                  <span>{new Date().toLocaleDateString()}</span>
                 </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'} transition-colors`}
-                  style={{ color: accentColor }}
-                  title="Preview (⌘E)"
-                >
-                  <FaEye />
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'} transition-colors`}
-                style={{ color: accentColor }}
-                title="Edit (⌘E)"
-              >
-                <FaEdit />
-              </button>
-            )}
-          </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto">
-          {isEditing ? (
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className={`w-full h-full p-6 resize-none focus:outline-none font-mono ${
-                theme === 'dark'
-                  ? 'bg-transparent text-white/90'
-                  : 'bg-transparent text-black/90'
-              }`}
-              placeholder="Write your notes here... Markdown is supported!"
-              style={{
-                caretColor: accentColor,
-              }}
-            />
-          ) : (
-            <div className={`p-6 prose max-w-none ${theme === 'dark' ? 'prose-invert' : ''}`}>
-              <ReactMarkdown>{currentNote?.content || ''}</ReactMarkdown>
+                {/* Calendar Popup */}
+                {showCalendar && (
+                  <motion.div
+                    ref={calendarRef}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`absolute right-0 top-full mt-2 p-4 rounded-xl shadow-xl z-50 ${
+                      theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+                    } border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+                    style={{ width: '300px' }}
+                  >
+                    <div className="grid grid-cols-7 gap-1">
+                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                        <div
+                          key={day}
+                          className={`text-center text-sm font-medium p-2 ${
+                            theme === 'dark' ? 'text-white/60' : 'text-black/60'
+                          }`}
+                        >
+                          {day}
+                        </div>
+                      ))}
+                      {Array.from({ length: 35 }, (_, i) => {
+                        const date = new Date();
+                        date.setDate(1);
+                        const firstDay = date.getDay();
+                        const currentDate = i - firstDay + 1;
+                        const isCurrentMonth = currentDate > 0 && currentDate <= new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+                        const isToday = currentDate === new Date().getDate() && isCurrentMonth;
+
+                        return (
+                          <div
+                            key={i}
+                            className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
+                              isCurrentMonth
+                                ? isToday
+                                  ? `bg-${accentColor} text-white`
+                                  : theme === 'dark'
+                                  ? 'text-white hover:bg-white/10'
+                                  : 'text-black hover:bg-black/5'
+                                : theme === 'dark'
+                                ? 'text-white/20'
+                                : 'text-black/20'
+                            }`}
+                          >
+                            {isCurrentMonth ? currentDate : ''}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
+              {isEditing ? (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className={`w-full h-full resize-none focus:outline-none ${
+                    theme === 'dark' ? 'bg-transparent text-white' : 'bg-transparent text-black'
+                  } [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20`}
+                  style={{ height: 'calc(100vh - 12rem)' }}
+                />
+              ) : (
+                <div className="prose prose-sm max-w-none">
+                  <ReactMarkdown>{currentNote.content}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className={`${
+                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+              } rounded-xl p-6 max-w-sm mx-4 shadow-2xl`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-2">Delete Note</h3>
+              <p className={`${theme === 'dark' ? 'text-white/60' : 'text-black/60'} mb-6`}>
+                Are you sure you want to delete this note? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  className={`px-4 py-2 rounded-lg ${
+                    theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
+                  }`}
+                  onClick={() => setShowDeleteConfirm(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+                  onClick={() => showDeleteConfirm && confirmDelete(showDeleteConfirm)}
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
