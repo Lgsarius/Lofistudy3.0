@@ -9,6 +9,8 @@ import { Resizable } from 're-resizable';
 import { FaWindowMaximize, FaWindowRestore } from 'react-icons/fa';
 
 const MENU_BAR_HEIGHT = 48; // Height of the top menu bar
+const DOCK_HEIGHT = 120; // Increased dock height for better spacing
+const DOCK_SPACING = 20; // Additional spacing above dock
 
 interface WindowProps {
   window: {
@@ -44,7 +46,7 @@ export function Window({ window: windowData, children }: WindowProps) {
       const updateBounds = () => {
         setBounds({
           width: globalThis.window.innerWidth,
-          height: globalThis.window.innerHeight - MENU_BAR_HEIGHT,
+          height: globalThis.window.innerHeight - MENU_BAR_HEIGHT - DOCK_HEIGHT - DOCK_SPACING,
         });
       };
 
@@ -80,7 +82,7 @@ export function Window({ window: windowData, children }: WindowProps) {
       updateWindow(windowData.id, {
         isMaximized: true,
         position: { x: 0, y: MENU_BAR_HEIGHT },
-        size: { width: bounds.width, height: bounds.height - MENU_BAR_HEIGHT },
+        size: { width: bounds.width, height: bounds.height },
       });
     }
   };
@@ -91,7 +93,24 @@ export function Window({ window: windowData, children }: WindowProps) {
     }
   };
 
-  if (windowData.isMinimized || !mounted) {
+  if (!mounted) return null;
+
+  // Return null and cleanup when minimized
+  if (windowData.isMinimized) {
+    // Allow one frame for cleanup
+    requestAnimationFrame(() => {
+      // Force any media to stop
+      const mediaElements = document.querySelectorAll('audio, video, iframe');
+      mediaElements.forEach((element: any) => {
+        if (element.pause) {
+          element.pause();
+        }
+        if (element.src && element.src.includes('youtube')) {
+          // For YouTube iframes, we can't directly pause, so we can remove the src
+          element.src = '';
+        }
+      });
+    });
     return null;
   }
 
@@ -100,7 +119,7 @@ export function Window({ window: windowData, children }: WindowProps) {
     top: MENU_BAR_HEIGHT,
     left: 0,
     width: bounds.width,
-    height: bounds.height - MENU_BAR_HEIGHT,
+    height: bounds.height,
   } as const : undefined;
 
   return (
@@ -151,11 +170,11 @@ export function Window({ window: windowData, children }: WindowProps) {
           <div ref={dragRef}>
             <Resizable
               ref={resizeRef}
-              size={windowData.isMaximized ? { width: bounds.width, height: bounds.height - MENU_BAR_HEIGHT } : windowData.size}
+              size={windowData.isMaximized ? { width: bounds.width, height: bounds.height } : windowData.size}
               onResizeStop={(e, direction, ref, d) => {
                 if (!windowData.isMaximized) {
                   const newWidth = Math.min(windowData.size.width + d.width, bounds.width);
-                  const newHeight = Math.min(windowData.size.height + d.height, bounds.height - MENU_BAR_HEIGHT);
+                  const newHeight = Math.min(windowData.size.height + d.height, bounds.height);
                   updateWindow(windowData.id, {
                     size: { width: newWidth, height: newHeight },
                   });
@@ -164,7 +183,7 @@ export function Window({ window: windowData, children }: WindowProps) {
               minWidth={400}
               minHeight={300}
               maxWidth={bounds.width}
-              maxHeight={bounds.height - MENU_BAR_HEIGHT}
+              maxHeight={bounds.height}
               enable={{
                 top: !windowData.isMaximized,
                 right: !windowData.isMaximized,
