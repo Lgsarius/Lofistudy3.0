@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage } from 'react-icons/fa';
+import { FaPlay, FaPause, FaForward, FaBackward, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage, FaHeadphones, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '@/lib/store/settings';
 import ReactPlayer from 'react-player/youtube';
@@ -44,6 +44,18 @@ export function MusicPlayer() {
   const [showVideo, setShowVideo] = useState(true);
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsInputFocused(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -89,18 +101,20 @@ export function MusicPlayer() {
   const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      // Extract video ID and fetch video info if needed
       setIsPlaying(true);
-      // You would typically fetch video info here
+      const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
       setVideoInfo({
-        title: 'Video Title',
-        channelName: 'Channel Name',
-        thumbnail: 'thumbnail_url',
+        title: 'Loading...',
+        channelName: 'Loading...',
+        thumbnail: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
       });
+      setIsInputFocused(false);
     }
   };
 
-  const handleStreamSelect = (stream: typeof defaultStreams[0]) => {
+  const handleStreamSelect = (stream: typeof defaultStreams[0], e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setUrl(stream.url);
     setVideoInfo({
       title: stream.title,
@@ -108,6 +122,7 @@ export function MusicPlayer() {
       thumbnail: `https://img.youtube.com/vi/${stream.url.split('v=')[1]}/maxresdefault.jpg`
     });
     setIsPlaying(true);
+    setIsInputFocused(false);
   };
 
   const toggleVideoView = () => {
@@ -117,52 +132,75 @@ export function MusicPlayer() {
   return (
     <div 
       ref={containerRef}
-      className={`flex flex-col h-full ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}
+      className={`h-full flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}
     >
-      {/* Default Streams */}
-      <div className={`p-4 border-b ${theme === 'dark' ? 'border-white/10' : 'border-gray-200'} flex flex-wrap gap-2`}>
-        {defaultStreams.map((stream) => (
-          <button
-            key={stream.url}
-            onClick={() => handleStreamSelect(stream)}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              url === stream.url
-                ? `bg-${accentColor} text-white`
-                : theme === 'dark'
-                ? 'bg-white/5 hover:bg-white/10'
-                : 'bg-gray-100 hover:bg-gray-200'
-            }`}
+      {/* Stream Selector */}
+      <div className="p-4 border-b border-white/10 backdrop-blur-xl">
+        <div className="relative" ref={dropdownRef}>
+          <button 
+            className="w-full px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between"
+            onClick={() => setIsInputFocused(!isInputFocused)}
           >
-            {stream.title}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center">
+                <FaHeadphones className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium">{videoInfo?.title || 'Select a stream'}</p>
+                <p className="text-xs text-white/60">{videoInfo?.channelName || 'Choose from below'}</p>
+              </div>
+            </div>
+            <FaChevronDown className={`w-4 h-4 text-white/60 transition-transform ${isInputFocused ? 'rotate-180' : ''}`} />
           </button>
-        ))}
+
+          <AnimatePresence>
+            {isInputFocused && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute inset-x-0 top-full mt-2 bg-gray-800/90 backdrop-blur-xl rounded-lg border border-white/10 overflow-hidden z-50 shadow-xl"
+              >
+                <div className="p-4 space-y-4">
+                  <div className="relative">
+                    <FaYoutube className="absolute left-3 top-2.5 text-red-500" />
+                    <form onSubmit={handleUrlSubmit}>
+                      <input
+                        type="text"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder="Paste YouTube URL here..."
+                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </form>
+                  </div>
+                  <div className="space-y-2">
+                    {defaultStreams.map((stream) => (
+                      <button
+                        key={stream.url}
+                        onClick={(e) => handleStreamSelect(stream, e)}
+                        className="w-full px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center space-x-3 active:bg-white/20"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center">
+                          <FaHeadphones className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="text-left flex-1">
+                          <p className="text-sm font-medium truncate">{stream.title}</p>
+                          <p className="text-xs text-white/60">{stream.channelName}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Video Input */}
-      <motion.form 
-        onSubmit={handleUrlSubmit}
-        className={`p-4 border-b ${theme === 'dark' ? 'border-white/10' : 'border-gray-200'}`}
-      >
-        <div className="relative">
-          <FaYoutube className={`absolute left-3 top-1/2 -translate-y-1/2 ${isInputFocused ? 'text-red-500' : theme === 'dark' ? 'text-white/40' : 'text-gray-400'}`} />
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onFocus={() => setIsInputFocused(true)}
-            onBlur={() => setIsInputFocused(false)}
-            placeholder="Paste YouTube URL here..."
-            className={`w-full pl-10 pr-4 py-2 rounded-xl ${
-              theme === 'dark' 
-                ? 'bg-white/5 focus:bg-white/10' 
-                : 'bg-gray-100 focus:bg-gray-50'
-            } outline-none transition-colors`}
-          />
-        </div>
-      </motion.form>
-
       {/* Player Area */}
-      <div className="flex-1 relative overflow-hidden bg-black">
+      <div className="flex-1 relative overflow-hidden">
         {url && (
           <>
             {showVideo ? (
@@ -170,8 +208,7 @@ export function MusicPlayer() {
                 ref={playerRef}
                 url={url}
                 playing={isPlaying}
-                volume={volume}
-                muted={isMuted}
+                volume={isMuted ? 0 : volume}
                 width="100%"
                 height="100%"
                 style={{ position: 'absolute', top: 0, left: 0 }}
@@ -187,25 +224,32 @@ export function MusicPlayer() {
                   }
                 }}
               />
-            ) : (
-              videoInfo && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute inset-0 bg-center bg-cover flex flex-col items-center justify-center"
-                  style={{
-                    backgroundImage: `url(${videoInfo.thumbnail})`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div className="relative z-10 text-center p-6">
-                    <h2 className="text-2xl font-bold mb-2">{videoInfo.title}</h2>
-                    <p className="text-white/60">{videoInfo.channelName}</p>
-                  </div>
-                </motion.div>
-              )
+            ) : videoInfo && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-center bg-cover flex items-center justify-center"
+                style={{
+                  backgroundImage: `url(${videoInfo.thumbnail})`,
+                }}
+              >
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <div className="relative z-10 text-center p-6">
+                  <h2 className="text-2xl font-bold mb-2">{videoInfo.title}</h2>
+                  <p className="text-white/60">{videoInfo.channelName}</p>
+                </div>
+              </motion.div>
             )}
           </>
+        )}
+
+        {!url && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white/60">
+              <FaHeadphones className="w-16 h-16 mx-auto mb-4" />
+              <p>Select a stream to start listening</p>
+            </div>
+          </div>
         )}
       </div>
 
@@ -213,13 +257,13 @@ export function MusicPlayer() {
       <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'} backdrop-blur-xl`}>
         {/* Progress Bar */}
         <div className="mb-4">
-          <div className={`h-1 ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-200'} rounded-full overflow-hidden`}>
+          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-red-500"
+              className="h-full bg-orange-500"
               style={{ width: `${progress * 100}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1 text-xs text-gray-500">
+          <div className="flex justify-between mt-1 text-xs text-white/60">
             <span>{formatTime(progress * duration)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -227,28 +271,23 @@ export function MusicPlayer() {
 
         {/* Controls */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             <button
               onClick={handlePlayPause}
-              className={`p-3 rounded-xl ${
-                theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
-              } transition-colors`}
+              className="w-14 h-14 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500/30 transition-colors"
             >
-              {isPlaying ? <FaPause /> : <FaPlay />}
+              {isPlaying ? <FaPause className="w-6 h-6" /> : <FaPlay className="w-6 h-6" />}
             </button>
             <button
               onClick={toggleVideoView}
-              className={`p-3 rounded-xl ${
-                theme === 'dark' ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-100 hover:bg-gray-200'
-              } transition-colors`}
-              title={showVideo ? 'Show Thumbnail' : 'Show Video'}
+              className="p-3 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
             >
               {showVideo ? <FaImage /> : <FaVideo />}
             </button>
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-white/60">
               <button onClick={toggleMute}>
                 {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
               </button>
@@ -259,17 +298,15 @@ export function MusicPlayer() {
                 step="0.01"
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className={`w-24 h-1 ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-200'} rounded-full appearance-none cursor-pointer`}
+                className="w-24 h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500"
                 style={{
-                  backgroundImage: `linear-gradient(to right, ${accentColor} ${volume * 100}%, transparent ${volume * 100}%)`,
+                  background: `linear-gradient(to right, #f97316 ${volume * 100}%, rgba(255, 255, 255, 0.1) ${volume * 100}%)`,
                 }}
               />
             </div>
             <button
               onClick={toggleFullscreen}
-              className={`p-2 rounded-lg ${
-                theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-200'
-              } transition-colors`}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
             >
               {isFullscreen ? <FaCompress /> : <FaExpand />}
             </button>
