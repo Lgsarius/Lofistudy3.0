@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { FaClock, FaMusic, FaStickyNote, FaCog, FaComment, FaWaveSquare } from 'react-icons/fa';
+import { FaClock, FaMusic, FaStickyNote, FaCog, FaComment, FaWaveSquare, FaListUl } from 'react-icons/fa';
 import { useWindowsStore } from '@/lib/store/windows';
 import { useSettingsStore } from '@/lib/store/settings';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,6 +25,12 @@ const apps = [
     icon: FaWaveSquare,
     title: 'ASMR Mixer',
     defaultSize: { width: 800, height: 600 },
+  },
+  {
+    id: 'todo',
+    icon: FaListUl,
+    title: 'Todo List',
+    defaultSize: { width: 400, height: 600 },
   },
   {
     id: 'notes',

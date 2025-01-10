@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaHeadphones, FaClock, FaBook, FaCog } from 'react-icons/fa';
 import { useSettingsStore } from '@/lib/store/settings';
 import Image from 'next/image';
+import TodoList from '@/components/apps/TodoList';
 
 export default function AppPage() {
   const { windows } = useWindowsStore();
@@ -26,8 +27,12 @@ export default function AppPage() {
         return <Notes />;
       case 'settings':
         return <Settings />;
+      case 'chat':
+        return <Chat />;
       case 'asmr':
         return <ASMRPlayer />;
+      case 'todo':
+        return <TodoList />;
       default:
         return null;
     }

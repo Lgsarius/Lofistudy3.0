@@ -245,8 +245,8 @@ export default function LandingPage() {
                   </motion.div>
                 </motion.div>
               </div>
-            </div>
-          </main>
+        </div>
+      </main>
 
           {/* Scroll Indicator */}
           <motion.div
