@@ -6,6 +6,7 @@ import { PomodoroTimer } from '@/components/apps/PomodoroTimer';
 import { MusicPlayer } from '@/components/apps/MusicPlayer';
 import { Notes } from '@/components/apps/Notes';
 import { Settings } from '@/components/apps/Settings';
+import { ASMRPlayer } from '@/components/apps/ASMRPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaHeadphones, FaClock, FaBook, FaCog } from 'react-icons/fa';
 import { useSettingsStore } from '@/lib/store/settings';
@@ -25,6 +26,8 @@ export default function AppPage() {
         return <Notes />;
       case 'settings':
         return <Settings />;
+      case 'asmr':
+        return <ASMRPlayer />;
       default:
         return null;
     }

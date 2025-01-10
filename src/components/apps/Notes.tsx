@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/lib/store/settings';
 import { useAuthStore } from '@/lib/store/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, onSnapshot } from 'firebase/firestore';
 
 interface Note {
   id: string;
@@ -20,7 +20,7 @@ interface Note {
 }
 
 const defaultNote = {
-  id: '1',
+  id: 'default',
   title: 'Welcome to Notes! 📝',
   content: `# Welcome to Notes! 📝
 
@@ -57,7 +57,7 @@ export function Notes() {
   const { theme, accentColor } = useSettingsStore();
   const { user } = useAuthStore();
   const [notes, setNotes] = useState<Note[]>([defaultNote]);
-  const [selectedNoteId, setSelectedNoteId] = useState(notes[0].id);
+  const [selectedNoteId, setSelectedNoteId] = useState<string>(defaultNote.id);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editContent, setEditContent] = useState(notes[0].content);
@@ -69,10 +69,15 @@ export function Notes() {
 
   const folders = Array.from(new Set(notes.map(note => note.folder).filter(Boolean)));
 
-  // Load notes from Firebase
+  // Load notes from Firebase with proper cleanup
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
     const loadNotes = async () => {
-      if (!user) return;
+      if (!user) {
+        setNotes([{ ...defaultNote, userId: '' }]);
+        setIsLoading(false);
+        return;
+      }
       
       try {
         const notesRef = collection(db, 'notes');
@@ -82,24 +87,44 @@ export function Notes() {
           orderBy('lastModified', 'desc')
         );
         
-        const querySnapshot = await getDocs(q);
-        const loadedNotes = querySnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          lastModified: doc.data().lastModified.toDate(),
-        })) as Note[];
+        // Set up real-time listener
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const loadedNotes = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id,
+            lastModified: doc.data().lastModified.toDate(),
+          })) as Note[];
 
-        setNotes(loadedNotes.length > 0 ? loadedNotes : [defaultNote]);
-        setSelectedNoteId(loadedNotes[0]?.id || defaultNote.id);
-        setEditContent(loadedNotes[0]?.content || defaultNote.content);
+          if (loadedNotes.length === 0) {
+            setNotes([{ ...defaultNote, userId: user.uid }]);
+          } else {
+            setNotes(loadedNotes);
+          }
+          
+          // Update selected note if needed
+          if (!selectedNoteId || !loadedNotes.find(note => note.id === selectedNoteId)) {
+            const firstNoteId = loadedNotes[0]?.id || defaultNote.id;
+            setSelectedNoteId(firstNoteId);
+            setEditContent(loadedNotes[0]?.content || defaultNote.content);
+          }
+        }, (error) => {
+          console.error('Error loading notes:', error);
+          setNotes([{ ...defaultNote, userId: user.uid }]);
+        });
       } catch (error) {
-        console.error('Error loading notes:', error);
+        console.error('Error setting up notes listener:', error);
+        setNotes([{ ...defaultNote, userId: user.uid }]);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadNotes();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [user]);
 
   const handleSave = async () => {
@@ -117,24 +142,17 @@ export function Notes() {
       if (selectedNoteId === defaultNote.id) {
         // Create new note
         const docRef = await addDoc(collection(db, 'notes'), updatedNote);
-        setNotes(prev => [{
-          ...updatedNote,
-          id: docRef.id,
-          lastModified: new Date(),
-        }, ...prev.filter(n => n.id !== defaultNote.id)]);
         setSelectedNoteId(docRef.id);
       } else {
         // Update existing note
         const noteRef = doc(db, 'notes', selectedNoteId);
         await updateDoc(noteRef, updatedNote);
-        setNotes(prev => prev.map(note =>
-          note.id === selectedNoteId
-            ? { ...note, ...updatedNote }
-            : note
-        ));
       }
     } catch (error) {
       console.error('Error saving note:', error);
+      // Show error to user
+      alert('Failed to save note. Please try again.');
+      return;
     }
 
     setIsEditing(false);
@@ -154,34 +172,29 @@ export function Notes() {
 
     try {
       const docRef = await addDoc(collection(db, 'notes'), newNote);
-      const noteWithId = { ...newNote, id: docRef.id };
-      setNotes(prev => [noteWithId, ...prev]);
       setSelectedNoteId(docRef.id);
       setEditContent(newNote.content);
       setIsEditing(true);
     } catch (error) {
       console.error('Error creating note:', error);
+      alert('Failed to create new note. Please try again.');
     }
   };
 
   const handleDeleteNote = async (id: string) => {
+    if (id === defaultNote.id) return;
     setShowDeleteConfirm(id);
   };
 
   const confirmDelete = async (id: string) => {
-    if (!user || notes.length === 1 || id === defaultNote.id) return;
+    if (!user || id === defaultNote.id) return;
 
     try {
       await deleteDoc(doc(db, 'notes', id));
-      setNotes(prev => prev.filter(note => note.id !== id));
-      if (selectedNoteId === id) {
-        const newSelectedNote = notes.find(note => note.id !== id) || notes[0];
-        setSelectedNoteId(newSelectedNote.id);
-        setEditContent(newSelectedNote.content);
-      }
       setShowDeleteConfirm(null);
     } catch (error) {
       console.error('Error deleting note:', error);
+      alert('Failed to delete note. Please try again.');
     }
   };
 

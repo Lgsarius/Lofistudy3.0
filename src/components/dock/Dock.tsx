@@ -1,12 +1,11 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { FaClock, FaMusic, FaStickyNote, FaCog } from 'react-icons/fa';
+import { FaClock, FaMusic, FaStickyNote, FaCog, FaComment, FaWaveSquare } from 'react-icons/fa';
 import { useWindowsStore } from '@/lib/store/windows';
 import { useSettingsStore } from '@/lib/store/settings';
 import { v4 as uuidv4 } from 'uuid';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaComment } from 'react-icons/fa6';
 
 const apps = [
   {
@@ -20,6 +19,12 @@ const apps = [
     icon: FaMusic,
     title: 'Music Player',
     defaultSize: { width: 600, height: 800 },
+  },
+  {
+    id: 'asmr',
+    icon: FaWaveSquare,
+    title: 'ASMR Mixer',
+    defaultSize: { width: 800, height: 600 },
   },
   {
     id: 'notes',

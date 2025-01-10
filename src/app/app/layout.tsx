@@ -11,6 +11,11 @@ import { Dock } from '@/components/dock/Dock';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { LofiLogo } from '@/components/icons/LofiLogo';
+import { ASMRPlayer } from '@/components/apps/ASMRPlayer';
+import { MusicPlayer } from '@/components/apps/MusicPlayer';
+import { PomodoroTimer } from '@/components/apps/PomodoroTimer';
+import { Settings } from '@/components/apps/Settings';
+import { Notes } from '@/components/apps/Notes';
 
 interface MenuItem {
   label?: string;
@@ -103,6 +108,15 @@ function MenuDropdown({ label, items, theme }: MenuDropdownProps) {
     </div>
   );
 }
+
+const apps: { [key: string]: React.ComponentType } = {
+  pomodoro: PomodoroTimer,
+  music: MusicPlayer,
+  notes: Notes,
+
+  settings: Settings,
+  asmr: ASMRPlayer,
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();

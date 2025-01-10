@@ -4,24 +4,27 @@ import { useRef, useState, useEffect } from 'react';
 import { useWindowsStore } from '@/lib/store/windows';
 import { useSettingsStore } from '@/lib/store/settings';
 import { motion, AnimatePresence } from 'framer-motion';
-import Draggable from 'react-draggable';
+import Draggable, { DraggableEventHandler, DraggableData } from 'react-draggable';
 import { Resizable } from 're-resizable';
 import { FaWindowMaximize, FaWindowRestore } from 'react-icons/fa';
 
-const MENU_BAR_HEIGHT = 48; // Height of the top menu bar
-const DOCK_HEIGHT = 120; // Increased dock height for better spacing
+const MENU_BAR_HEIGHT = 20; // Height of the top menu bar
+const DOCK_HEIGHT = 130; // Increased dock height for better spacing
 const DOCK_SPACING = 20; // Additional spacing above dock
 
+interface WindowData {
+  id: string;
+  title: string;
+  type: string;
+  isMinimized: boolean;
+  isMaximized: boolean;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  zIndex?: number;
+}
+
 interface WindowProps {
-  window: {
-    id: string;
-    title: string;
-    type: string;
-    isMinimized: boolean;
-    isMaximized: boolean;
-    position: { x: number; y: number };
-    size: { width: number; height: number };
-  };
+  window: WindowData;
   children: React.ReactNode;
 }
 
@@ -31,8 +34,8 @@ export function Window({ window: windowData, children }: WindowProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [bounds, setBounds] = useState({ width: 1920, height: 1080 });
   const [mounted, setMounted] = useState(false);
-  const dragRef = useRef<HTMLDivElement>(null);
-  const resizeRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<HTMLElement>(null);
+  const resizeRef = useRef<Resizable>(null);
   const lastPosition = useRef(windowData.position);
   const lastSize = useRef(windowData.size);
 
@@ -93,25 +96,29 @@ export function Window({ window: windowData, children }: WindowProps) {
     }
   };
 
+  const handleDragStart: DraggableEventHandler = (e) => {
+    if (!dragRef.current) return;
+    setIsDragging(true);
+  };
+
+  const handleDragStop: DraggableEventHandler = (e, data: DraggableData) => {
+    setIsDragging(false);
+    if (!windowData.isMaximized) {
+      updateWindow(windowData.id, {
+        position: { x: data.x, y: data.y },
+      });
+    }
+  };
+
   if (!mounted) return null;
 
-  // Return null and cleanup when minimized
+  // Return null but don't cleanup when minimized
   if (windowData.isMinimized) {
-    // Allow one frame for cleanup
-    requestAnimationFrame(() => {
-      // Force any media to stop
-      const mediaElements = document.querySelectorAll('audio, video, iframe');
-      mediaElements.forEach((element: any) => {
-        if (element.pause) {
-          element.pause();
-        }
-        if (element.src && element.src.includes('youtube')) {
-          // For YouTube iframes, we can't directly pause, so we can remove the src
-          element.src = '';
-        }
-      });
-    });
-    return null;
+    return (
+      <div style={{ display: 'none' }}>
+        {children}
+      </div>
+    );
   }
 
   const maximizedStyle = windowData.isMaximized ? {
@@ -145,19 +152,8 @@ export function Window({ window: windowData, children }: WindowProps) {
           nodeRef={dragRef}
           handle=".window-handle"
           position={windowData.isMaximized ? { x: 0, y: 0 } : windowData.position}
-          onStart={() => {
-            if (!dragRef.current) return false;
-            setIsDragging(true);
-            return true;
-          }}
-          onStop={(e, data) => {
-            setIsDragging(false);
-            if (!windowData.isMaximized) {
-              updateWindow(windowData.id, {
-                position: { x: data.x, y: data.y },
-              });
-            }
-          }}
+          onStart={handleDragStart}
+          onStop={handleDragStop}
           bounds={{
             left: 0,
             top: MENU_BAR_HEIGHT,
