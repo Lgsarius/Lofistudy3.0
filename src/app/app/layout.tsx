@@ -272,32 +272,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col relative overflow-hidden ${theme === 'dark' ? 'dark' : ''}`}>
-      {/* Wallpaper */}
-      <div className="fixed inset-0 z-0 w-screen h-screen">
-        <Image
-          src={wallpaper}
-          alt="Wallpaper"
-          fill
-          priority
-          className="object-cover object-center w-full h-full"
-          sizes="100vw"
-          quality={100}
-          style={{
-            filter: theme === 'dark' ? 'brightness(0.7) saturate(1.2)' : 'brightness(1) saturate(1)',
-          }}
-        />
-      </div>
-
-      {/* Menu Bar */}
-      <div className="relative z-20">
-        <div className={`h-12 ${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-2xl border-b ${theme === 'dark' ? 'border-white/10' : 'border-black/10'} flex items-center px-4 ${theme === 'dark' ? 'text-white/90' : 'text-black/90'}`}>
-          <div className="flex-1 flex items-center space-x-6">
-            <div className="flex items-center space-x-4">
-              <LofiLogo className={`w-5 h-5 ${theme === 'dark' ? 'text-white/90' : 'text-black/90'}`} />
-              <span className="font-semibold text-lg">LofiStudy</span>
-            </div>
-            <div className="hidden md:flex space-x-2 text-sm font-medium">
+    <div className="min-h-screen flex flex-col">
+      {/* Top Bar */}
+      <div className="relative z-50">
+        <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xl" />
+        <div className="relative flex items-center justify-between px-4 h-10 border-b border-white/10">
+          {/* Left Menu */}
+          <div className="flex items-center space-x-2">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative"
+            >
+              <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-lg" />
+              <LofiLogo className="w-6 h-6 text-orange-500 relative" />
+            </motion.div>
+            <div className="flex items-center space-x-1">
               <MenuDropdown label="File" items={fileMenuItems} theme={theme} />
               <MenuDropdown label="Edit" items={editMenuItems} theme={theme} />
               <MenuDropdown label="View" items={viewMenuItems} theme={theme} />
@@ -305,144 +295,53 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <MenuDropdown label="Help" items={helpMenuItems} theme={theme} />
             </div>
           </div>
-          <div className="flex items-center space-x-6 text-sm">
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
+
+          {/* Right Menu */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 text-sm">
+              <div className="flex items-center space-x-1 text-white/60">
                 <FaWifi className="w-4 h-4" />
-                <span className="text-xs">Wi-Fi</span>
+                <span>Connected</span>
               </div>
-              <div className="flex items-center space-x-1">
-                <FaVolumeUp className="w-4 h-4" />
-                <span className="text-xs">100%</span>
-              </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 text-white/60">
                 <FaBatteryFull className="w-4 h-4" />
-                <span className="text-xs">100%</span>
+                <span>100%</span>
+              </div>
+              <div className="flex items-center space-x-1 text-white/60">
+                <FaVolumeUp className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <button
-                  onClick={() => setShowCalendar(!showCalendar)}
-                  className={`font-medium hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'} px-2 py-1 rounded transition-colors`}
-                >
-                  {currentTime.toLocaleTimeString()}
-                </button>
-
-                <AnimatePresence>
-                  {showCalendar && (
-                    <motion.div
-                      ref={calendarRef}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className={`absolute right-0 top-full mt-2 p-4 rounded-xl shadow-xl ${
-                        theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
-                      } backdrop-blur-xl border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
-                      style={{ width: '300px' }}
-                    >
-                      {/* Calendar Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <button
-                          onClick={handlePrevMonth}
-                          className={`p-1 rounded-lg ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-                        >
-                          <FaChevronLeft className="w-4 h-4" />
-                        </button>
-                        <h3 className="font-medium">
-                          {selectedMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </h3>
-                        <button
-                          onClick={handleNextMonth}
-                          className={`p-1 rounded-lg ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-                        >
-                          <FaChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Calendar Grid */}
-                      <div className="grid grid-cols-7 gap-1">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                          <div
-                            key={day}
-                            className={`text-center text-sm font-medium p-2 ${
-                              theme === 'dark' ? 'text-white/60' : 'text-black/60'
-                            }`}
-                          >
-                            {day}
-                          </div>
-                        ))}
-                        {Array.from({ length: 42 }, (_, i) => {
-                          const dayNumber = i - firstDayOfMonth + 1;
-                          const isCurrentMonth = dayNumber > 0 && dayNumber <= daysInMonth;
-                          const isToday = isCurrentMonth &&
-                            dayNumber === currentTime.getDate() &&
-                            selectedMonth.getMonth() === currentTime.getMonth() &&
-                            selectedMonth.getFullYear() === currentTime.getFullYear();
-
-                          return (
-                            <div
-                              key={i}
-                              className={`text-center p-2 rounded-lg ${
-                                isCurrentMonth
-                                  ? isToday
-                                    ? `bg-${accentColor} text-white`
-                                    : `cursor-pointer ${
-                                        theme === 'dark'
-                                          ? 'hover:bg-white/10'
-                                          : 'hover:bg-black/5'
-                                      }`
-                                  : 'text-opacity-30'
-                              } ${
-                                !isCurrentMonth
-                                  ? theme === 'dark'
-                                    ? 'text-white/20'
-                                    : 'text-black/20'
-                                  : ''
-                              }`}
-                            >
-                              {isCurrentMonth ? dayNumber : ''}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Current Time */}
-                      <div className={`mt-4 text-center text-sm ${
-                        theme === 'dark' ? 'text-white/60' : 'text-black/60'
-                      }`}>
-                        {currentTime.toLocaleTimeString()}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <div className={`h-4 w-px ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'}`} />
-              <div className="flex items-center space-x-2">
-                <span className="text-sm opacity-75 hidden sm:inline max-w-[200px] truncate">
-                  {user.email}
-                </span>
-                <button
-                  onClick={handleSignOut}
-                  className={`opacity-75 hover:opacity-100 transition-opacity p-1 hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'} rounded`}
-                  title="Sign Out"
-                >
-                  <FaSignOutAlt className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className="px-3 py-1 rounded-lg hover:bg-white/10 transition-colors text-white/80"
+            >
+              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSignOut}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+            >
+              <FaSignOutAlt className="w-4 h-4" />
+            </motion.button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 relative z-10">
+      <main className="flex-1 relative">
         {children}
       </main>
 
       {/* Dock */}
-      <div className="relative z-20">
-        <Dock />
+      <div className="relative z-50 p-4">
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+        <div className="relative flex justify-center">
+          <div className="bg-gray-900/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
+            <Dock />
+          </div>
+        </div>
       </div>
     </div>
   );

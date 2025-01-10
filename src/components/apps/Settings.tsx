@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FaPalette, FaImage, FaVolumeUp, FaClock, FaMoon, FaSun, FaCheck } from 'react-icons/fa';
-import { useSettingsStore, wallpapers } from '@/lib/store/settings';
+import { FaPalette, FaImage, FaVolumeUp, FaClock, FaMoon, FaSun, FaCheck, FaVideo } from 'react-icons/fa';
+import { useSettingsStore, wallpapers, onlineWallpapers, videoWallpapers } from '@/lib/store/settings';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -98,30 +98,104 @@ export function Settings() {
       case 'wallpaper':
         return (
           <div className="space-y-6">
-            <h3 className={`text-base font-medium ${theme === 'dark' ? 'text-white/90' : 'text-black/90'}`}>Choose Wallpaper</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {wallpapers.map((wp, index) => (
-                <button
-                  key={wp}
-                  onClick={() => setWallpaper(wp)}
-                  className={`relative aspect-video rounded-lg overflow-hidden transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                    wallpaper === wp ? 'ring-2 ring-white' : ''
-                  }`}
-                >
-                  <Image
-                    src={wp}
-                    alt={`Wallpaper ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                  {wallpaper === wp && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <FaCheck className="text-white w-6 h-6" />
+            <section>
+              <h2 className="mb-4 text-xl font-semibold">Static Wallpapers</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {wallpapers.map((wp) => (
+                  <button
+                    key={wp}
+                    onClick={() => setWallpaper(wp)}
+                    className={`relative aspect-video overflow-hidden rounded-lg border-2 ${
+                      wallpaper === wp ? 'border-accent' : 'border-transparent'
+                    }`}
+                  >
+                    <Image
+                      src={wp}
+                      alt="Wallpaper"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                    />
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-4 text-xl font-semibold flex items-center space-x-2">
+                <FaVideo className="text-accent" />
+                <span>Video Wallpapers</span>
+              </h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {videoWallpapers.map((wp) => (
+                  <button
+                    key={wp.url}
+                    onClick={() => setWallpaper(wp.url, true)}
+                    className={`group relative aspect-video overflow-hidden rounded-lg border-2 ${
+                      wallpaper === wp.url ? 'border-accent' : 'border-transparent'
+                    }`}
+                  >
+                    <video
+                      src={wp.url}
+                      muted
+                      loop
+                      playsInline
+                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.pause();
+                        e.currentTarget.currentTime = 0;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center">
+                      <div className="text-center p-2">
+                        <FaVideo className="w-8 h-8 mx-auto mb-2 text-white" />
+                        <p className="text-sm font-medium text-white">{wp.title}</p>
+                        <p className="text-xs text-gray-300">by {wp.author}</p>
+                      </div>
                     </div>
-                  )}
-                </button>
-              ))}
-            </div>
+                    {wallpaper === wp.url && (
+                      <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
+                        <FaCheck className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-4 text-xl font-semibold">Online Wallpapers</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {onlineWallpapers.map((wp) => (
+                  <button
+                    key={wp.url}
+                    onClick={() => setWallpaper(wp.url)}
+                    className={`group relative aspect-video overflow-hidden rounded-lg border-2 ${
+                      wallpaper === wp.url ? 'border-accent' : 'border-transparent'
+                    }`}
+                  >
+                    <Image
+                      src={wp.url}
+                      alt={wp.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                      priority={false}
+                      loading="lazy"
+                      quality={75}
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div className="p-2">
+                        <p className="text-sm font-medium">{wp.title}</p>
+                        <p className="text-xs text-gray-300">by {wp.author}</p>
+                        <p className="text-xs text-gray-400">{wp.source}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
         );
 

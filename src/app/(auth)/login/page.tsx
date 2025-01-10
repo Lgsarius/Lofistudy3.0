@@ -5,10 +5,8 @@ import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 
 import { auth } from '@/lib/firebase/config';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaGoogle, FaEnvelope, FaLock } from 'react-icons/fa';
+import { FaGoogle, FaEnvelope, FaLock, FaChevronRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { StudyCat } from '@/components/icons/StudyCat';
-import { CoffeeCup } from '@/components/icons/CoffeeCup';
 import { LofiLogo } from '@/components/icons/LofiLogo';
 
 export default function LoginPage() {
@@ -16,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -52,55 +51,23 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Background Animation */}
       <div className="fixed inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-purple-500/20" />
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23FF9900" fill-opacity="0.1"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-          }} />
+        <div className="absolute inset-0 bg-[#151515]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-orange-900/20 opacity-40" />
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent" />
         </div>
       </div>
-
-      {/* Floating Elements */}
-      <motion.div
-        animate={{
-          y: [0, -10, 0],
-          rotate: [-2, 2, -2],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute top-20 left-20 opacity-20"
-      >
-        <StudyCat className="w-40 h-40 text-orange-500" />
-      </motion.div>
-
-      <motion.div
-        animate={{
-          y: [0, 10, 0],
-          rotate: [2, -2, 2],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute bottom-20 right-20 opacity-20"
-      >
-        <CoffeeCup className="w-32 h-32 text-orange-500" />
-      </motion.div>
 
       {/* Login Form */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md z-10"
+        className="relative w-full max-w-md z-10 px-6"
       >
-        <div className="bg-gray-800/50 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/10">
+        <div className="bg-gray-800/30 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/10">
           <div className="text-center mb-8 flex flex-col items-center">
             <motion.div
               animate={{
@@ -111,13 +78,15 @@ export default function LoginPage() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
+              className="relative"
             >
-              <LofiLogo className="w-16 h-16 text-orange-500 mb-4" />
+              <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-xl" />
+              <LofiLogo className="w-16 h-16 text-orange-500 relative" />
             </motion.div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent">
-              Welcome Back
+            <h1 className="text-4xl font-bold mt-6 mb-2 bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200 bg-clip-text text-transparent">
+              Welcome back
             </h1>
-            <p className="text-gray-400 mt-2">Sign in to continue your study journey</p>
+            <p className="text-lg text-amber-100/60">Continue your productivity journey</p>
           </div>
           
           {error && (
@@ -133,7 +102,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full mb-6 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mb-6 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-white flex items-center justify-center space-x-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:border-white/20 hover:shadow-lg hover:shadow-orange-500/10"
           >
             <FaGoogle className="text-orange-500" />
             <span>Continue with Google</span>
@@ -144,22 +113,22 @@ export default function LoginPage() {
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gray-800/50 text-gray-400">or sign in with email</span>
+              <span className="px-4 bg-gray-800/30 text-gray-400">or sign in with email</span>
             </div>
           </div>
           
           <form onSubmit={handleEmailLogin} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaEnvelope className="text-gray-500" />
+                  <FaEnvelope className="text-gray-500 group-focus-within:text-orange-500 transition-colors" />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-11 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-colors"
+                  className="pl-11 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all duration-300 group-hover:border-white/20 hover:shadow-lg hover:shadow-orange-500/5"
                   placeholder="you@example.com"
                   required
                 />
@@ -168,33 +137,50 @@ export default function LoginPage() {
             
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaLock className="text-gray-500" />
+                  <FaLock className="text-gray-500 group-focus-within:text-orange-500 transition-colors" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-11 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-colors"
+                  className="pl-11 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent transition-all duration-300 group-hover:border-white/20 hover:shadow-lg hover:shadow-orange-500/5"
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-orange-500 transition-colors"
+                >
+                  {showPassword ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
             
-            <button
+            <motion.button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full group relative px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-purple-500 hover:from-orange-600 hover:to-purple-600 text-white transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-orange-500/20 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
+              <motion.div
+                className="absolute inset-0 bg-white/20 translate-y-full"
+                whileHover={{ translateY: 0 }}
+                transition={{ duration: 0.3 }}
+              />
+              <span className="relative z-10 flex items-center justify-center space-x-2">
+                <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
+                <FaChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </motion.button>
           </form>
           
           <p className="mt-8 text-center text-sm text-gray-400">
             Don't have an account?{' '}
-            <Link href="/register" className="text-orange-400 hover:text-orange-300 font-medium">
+            <Link href="/register" className="text-orange-400 hover:text-orange-300 font-medium hover:underline transition-all">
               Sign up
             </Link>
           </p>

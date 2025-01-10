@@ -11,18 +11,21 @@ import { FaGithub, FaPlay, FaPause, FaHeadphones, FaBook, FaClock, FaDiscord, Fa
 export default function LandingPage() {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState('00:00');
   const [currentText, setCurrentText] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
+  const [typedText, setTypedText] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
   const headlines = [
-    "Study with Lo-Fi vibes",
-    "Stay focused & productive",
-    "Join our community",
+    "Maximize Productivity",
+    "Optimize Performance",
+    "Enhance Focus",
+    "Streamline Workflow"
   ];
+
+  const subtitle = "Elevate your productivity with immersive lo-fi workspaces";
 
   // Parallax effects
   const y = useTransform(smoothProgress, [0, 1], [0, -300]);
@@ -35,31 +38,34 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      }));
-    }, 1000);
+    const currentHeadline = headlines[currentText];
+    let currentIndex = 0;
+    let typingInterval: NodeJS.Timeout;
 
-    return () => clearInterval(interval);
-  }, []);
+    const typeText = () => {
+      if (currentIndex <= currentHeadline.length) {
+        setTypedText(currentHeadline.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typingInterval);
+        setTimeout(() => {
+          currentIndex = 0;
+          setCurrentText((prev) => (prev + 1) % headlines.length);
+        }, 2000);
+      }
+    };
 
-  useEffect(() => {
-    const textInterval = setInterval(() => {
-      setCurrentText((prev) => (prev + 1) % headlines.length);
-    }, 3000);
+    typingInterval = setInterval(typeText, 100);
 
     const cursorInterval = setInterval(() => {
       setShowCursor((prev) => !prev);
     }, 500);
 
     return () => {
-      clearInterval(textInterval);
+      clearInterval(typingInterval);
       clearInterval(cursorInterval);
     };
-  }, []);
+  }, [currentText]);
 
   const scrollToFeatures = () => {
     const firstFeature = document.getElementById('features');
@@ -160,77 +166,87 @@ export default function LandingPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8 }}
-                  className="text-6xl md:text-7xl font-bold space-y-4 mb-8"
+                  className="space-y-6"
                 >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentText}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.5 }}
-                      className="h-24 md:h-32 bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient"
-                    >
-                      {headlines[currentText]}
-                      <span className={`ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity text-amber-300`}>|</span>
-                    </motion.div>
-                  </AnimatePresence>
-                </motion.div>
+                  <div className="space-y-4">
+                    <h1 className="text-6xl md:text-7xl font-bold whitespace-nowrap">
+                      <span className="bg-gradient-to-r from-amber-200 via-orange-300 to-amber-200 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient inline-flex whitespace-nowrap">
+                        {typedText}
+                        <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity text-amber-300`}>|</span>
+                      </span>
+                    </h1>
+                    <p className="text-2xl text-amber-100/60 leading-relaxed">
+                      {subtitle}
+                    </p>
+                  </div>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  className="text-2xl text-amber-100/60 leading-relaxed"
-                >
-                  Find your flow with ambient lo-fi beats, minimal distractions, 
-                  and a cozy space to focus and create.
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.6 }}
-                  className="mt-12 flex items-center space-x-6"
-                >
-                  <Link href="/register">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                    className="flex flex-col sm:flex-row items-center gap-6 pt-8"
+                  >
+                    <Link href="/register" className="w-full sm:w-auto">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-full group relative px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-purple-500 hover:from-orange-600 hover:to-purple-600 transition-all duration-300 shadow-xl hover:shadow-2xl overflow-hidden"
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-white/20 translate-y-full"
+                          whileHover={{ translateY: 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                        <span className="relative z-10 text-lg font-medium">Start Your Journey</span>
+                      </motion.button>
+                    </Link>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="group relative px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-purple-500 hover:from-orange-600 hover:to-purple-600 transition-all duration-300 shadow-xl hover:shadow-2xl overflow-hidden"
+                      onClick={handlePreview}
+                      className="w-full sm:w-auto flex items-center justify-center space-x-3 px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur transition-all duration-300"
                     >
-                      <motion.div
-                        className="absolute inset-0 bg-white/20 translate-y-full"
-                        whileHover={{ translateY: 0 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                      <span className="relative z-10 text-lg font-medium">Start Your Journey</span>
+                      <FaPlay className="w-5 h-5 text-orange-500" />
+                      <span className="text-lg font-medium">Watch Demo</span>
                     </motion.button>
-                  </Link>
+                  </motion.div>
+
+                  {/* Stats */}
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="text-4xl font-mono text-white/80"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.8 }}
+                    className="flex flex-wrap gap-8 pt-8"
                   >
-                    {currentTime}
+                    <div className="flex items-center space-x-3">
+                      <div className="text-3xl font-bold text-orange-500">24/7</div>
+                      <div className="text-white/60">Lofi Radio</div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-3xl font-bold text-purple-500">100%</div>
+                      <div className="text-white/60">Free Forever</div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-3xl font-bold text-amber-500">∞</div>
+                      <div className="text-white/60">Possibilities</div>
+                    </div>
+                  </motion.div>
+
+                  {/* Feature Pills */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 1 }}
+                    className="flex flex-wrap gap-4 pt-8"
+                  >
+                    <FeaturePill icon={FaHeadphones} text="Lo-Fi Music" delay={0.2} />
+                    <FeaturePill icon={FaClock} text="Pomodoro Timer" delay={0.4} />
+                    <FeaturePill icon={FaBook} text="Smart Notes" delay={0.6} />
                   </motion.div>
                 </motion.div>
-
-                {/* Feature Pills */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.9 }}
-                  className="mt-16 flex flex-wrap gap-4"
-                >
-                  <FeaturePill icon={FaHeadphones} text="Lo-Fi Music" delay={0.2} />
-                  <FeaturePill icon={FaClock} text="Pomodoro Timer" delay={0.4} />
-                  <FeaturePill icon={FaBook} text="Smart Notes" delay={0.6} />
-                </motion.div>
               </div>
-        </div>
-      </main>
+            </div>
+          </main>
 
           {/* Scroll Indicator */}
           <motion.div

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FaPlay, FaPause, FaForward, FaBackward, FaRandom, FaVolumeUp, FaHeadphones, FaChevronDown } from 'react-icons/fa';
+import { FaPlay, FaPause, FaForward, FaBackward, FaVolumeUp, FaHeadphones, FaChevronDown } from 'react-icons/fa';
 
 export function AudioPlayerPreview() {
   const [isPlaying, setIsPlaying] = useState(false);

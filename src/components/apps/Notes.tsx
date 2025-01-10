@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaTags, FaCalendar } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaCalendar } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { useSettingsStore } from '@/lib/store/settings';
 import { useAuthStore } from '@/lib/store/auth';
@@ -16,6 +16,7 @@ interface Note {
   lastModified: Date;
   folder?: string;
   tags?: string[];
+  userId: string;
 }
 
 const defaultNote = {
@@ -48,7 +49,8 @@ This is your new markdown editor. Here's what you can do:
 Start writing by clicking the + button or pressing ⌘/Ctrl + N!`,
   lastModified: new Date(),
   folder: 'Getting Started',
-  tags: ['welcome', 'tutorial']
+  tags: ['welcome', 'tutorial'],
+  userId: ''
 };
 
 export function Notes() {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaPlay, FaPause, FaForward, FaBackward, FaRandom, FaVolumeUp, FaClock, FaBook, FaCog, FaTimes } from 'react-icons/fa';
+import { FaPlay, FaClock, FaBook, FaCog, FaTimes } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import { AudioPlayerPreview } from '@/components/previews/AudioPlayerPreview';
 import { PomodoroPreview } from '@/components/previews/PomodoroPreview';

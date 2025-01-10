@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { FaPlay, FaPause, FaForward, FaBackward, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage, FaHeadphones, FaChevronDown } from 'react-icons/fa';
+import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage, FaHeadphones, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '@/lib/store/settings';
 import ReactPlayer from 'react-player/youtube';
@@ -31,7 +31,7 @@ const defaultStreams = [
 ];
 
 export function MusicPlayer() {
-  const { theme, accentColor } = useSettingsStore();
+  const { theme } = useSettingsStore();
   const [url, setUrl] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -112,9 +112,7 @@ export function MusicPlayer() {
     }
   };
 
-  const handleStreamSelect = (stream: typeof defaultStreams[0], e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleStreamSelect = (stream: typeof defaultStreams[0]) => {
     setUrl(stream.url);
     setVideoInfo({
       title: stream.title,
@@ -179,7 +177,7 @@ export function MusicPlayer() {
                     {defaultStreams.map((stream) => (
                       <button
                         key={stream.url}
-                        onClick={(e) => handleStreamSelect(stream, e)}
+                        onClick={() => handleStreamSelect(stream)}
                         className="w-full px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center space-x-3 active:bg-white/20"
                       >
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center">
@@ -214,15 +212,7 @@ export function MusicPlayer() {
                 style={{ position: 'absolute', top: 0, left: 0 }}
                 onProgress={handleProgress}
                 onDuration={handleDuration}
-                config={{
-                  youtube: {
-                    playerVars: { 
-                      showinfo: 1, 
-                      controls: 0,
-                      modestbranding: 1
-                    }
-                  }
-                }}
+                controls={false}
               />
             ) : videoInfo && (
               <motion.div
