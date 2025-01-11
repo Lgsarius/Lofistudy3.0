@@ -18,15 +18,16 @@ interface PomodoroState {
   mode: TimerMode;
   timeLeft: number;
   sessionsCompleted: number;
-  lastTickTime: number | null;
+  startTime: number | null;
   settings: PomodoroSettings;
   setIsRunning: (isRunning: boolean) => void;
   setMode: (mode: TimerMode) => void;
   setTimeLeft: (timeLeft: number) => void;
   setSessionsCompleted: (sessions: number) => void;
-  setLastTickTime: (time: number | null) => void;
+  setStartTime: (time: number | null) => void;
   updateSettings: (settings: Partial<PomodoroSettings>) => void;
   resetTimer: () => void;
+  syncTimerState: () => void;
 }
 
 const defaultSettings: PomodoroSettings = {
@@ -46,9 +47,15 @@ export const usePomodoroStore = create<PomodoroState>()(
       mode: 'work',
       timeLeft: defaultSettings.workDuration,
       sessionsCompleted: 0,
-      lastTickTime: null,
+      startTime: null,
       settings: defaultSettings,
-      setIsRunning: (isRunning) => set({ isRunning }),
+      setIsRunning: (isRunning) => {
+        if (isRunning) {
+          set({ isRunning, startTime: Date.now() });
+        } else {
+          set({ isRunning, startTime: null });
+        }
+      },
       setMode: (mode) => {
         const { settings } = get();
         let newTimeLeft;
@@ -63,11 +70,11 @@ export const usePomodoroStore = create<PomodoroState>()(
             newTimeLeft = settings.longBreakDuration;
             break;
         }
-        set({ mode, timeLeft: newTimeLeft });
+        set({ mode, timeLeft: newTimeLeft, startTime: null, isRunning: false });
       },
       setTimeLeft: (timeLeft) => set({ timeLeft }),
       setSessionsCompleted: (sessionsCompleted) => set({ sessionsCompleted }),
-      setLastTickTime: (lastTickTime) => set({ lastTickTime }),
+      setStartTime: (startTime) => set({ startTime }),
       updateSettings: (newSettings) => 
         set((state) => ({ 
           settings: { ...state.settings, ...newSettings },
@@ -84,11 +91,21 @@ export const usePomodoroStore = create<PomodoroState>()(
           mode === 'break' ? 
             settings.breakDuration : 
             settings.longBreakDuration;
-        set({ timeLeft: newTimeLeft, isRunning: false, lastTickTime: null });
+        set({ timeLeft: newTimeLeft, isRunning: false, startTime: null });
+      },
+      syncTimerState: () => {
+        const { startTime, timeLeft, isRunning } = get();
+        if (isRunning && startTime) {
+          const now = Date.now();
+          const elapsedSeconds = Math.floor((now - startTime) / 1000);
+          const newTimeLeft = Math.max(0, timeLeft - elapsedSeconds);
+          set({ timeLeft: newTimeLeft, startTime: now });
+        }
       },
     }),
     {
       name: 'lofistudy-pomodoro',
+      version: 1,
     }
   )
 ); 

@@ -12,37 +12,49 @@ export function PomodoroTimer() {
     mode,
     timeLeft,
     sessionsCompleted,
-    lastTickTime,
+    startTime,
     setIsRunning,
     setMode,
     setTimeLeft,
     setSessionsCompleted,
-    setLastTickTime,
+    setStartTime,
+    syncTimerState,
   } = usePomodoroStore();
 
+  // Sync timer state when component mounts or window gains focus
+  useEffect(() => {
+    syncTimerState();
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncTimerState();
+      }
+    };
+
+    const handleFocus = () => {
+      syncTimerState();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [syncTimerState]);
+
+  // Timer tick effect
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
     if (isRunning) {
-      // Update lastTickTime if it's null (first start)
-      if (!lastTickTime) {
-        setLastTickTime(Date.now());
-      }
-
       intervalId = setInterval(() => {
-        const now = Date.now();
-        const elapsed = lastTickTime ? Math.floor((now - lastTickTime) / 1000) : 0;
-        setLastTickTime(now);
-
-        if (elapsed > 0) {
-          setTimeLeft((prev) => {
-            const newTime = prev - elapsed;
-            if (newTime <= 0) {
-              completeSession();
-              return 0;
-            }
-            return newTime;
-          });
+        syncTimerState();
+        
+        // Check if timer has completed
+        if (timeLeft <= 0) {
+          completeSession();
         }
       }, 1000);
     }
@@ -52,7 +64,7 @@ export function PomodoroTimer() {
         clearInterval(intervalId);
       }
     };
-  }, [isRunning, lastTickTime]);
+  }, [isRunning, timeLeft]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -62,27 +74,27 @@ export function PomodoroTimer() {
 
   const toggleTimer = () => {
     if (!isRunning) {
-      setLastTickTime(Date.now());
+      setStartTime(Date.now());
     }
     setIsRunning(!isRunning);
   };
 
   const resetTimer = () => {
     setIsRunning(false);
-    setLastTickTime(null);
+    setStartTime(null);
     setTimeLeft(mode === 'work' ? pomodoroWorkDuration * 60 : pomodoroBreakDuration * 60);
   };
 
   const switchMode = (newMode: 'work' | 'break' | 'long-break') => {
     setMode(newMode);
     setIsRunning(false);
-    setLastTickTime(null);
+    setStartTime(null);
     setTimeLeft(newMode === 'work' ? pomodoroWorkDuration * 60 : pomodoroBreakDuration * 60);
   };
 
   const completeSession = () => {
     setIsRunning(false);
-    setLastTickTime(null);
+    setStartTime(null);
     
     if (mode === 'work') {
       setSessionsCompleted(sessionsCompleted + 1);
