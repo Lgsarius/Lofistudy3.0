@@ -1,150 +1,93 @@
 /* eslint-disable */
 'use client';
 
+import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
 import { useSettingsStore } from '@/lib/store/settings';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
-import { FaSignOutAlt, FaWifi, FaBatteryFull, FaVolumeUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { Dock } from '@/components/dock/Dock';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import { LofiLogo } from '@/components/icons/LofiLogo';
-import { ASMRPlayer } from '@/components/apps/ASMRPlayer';
-import { MusicPlayer } from '@/components/apps/MusicPlayer';
-import { PomodoroTimer } from '@/components/apps/PomodoroTimer';
-import { Settings } from '@/components/apps/Settings';
-import { Notes } from '@/components/apps/Notes';
+import Image from 'next/image';
+import WelcomeGuide from '@/components/WelcomeGuide';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { FaSignOutAlt, FaQuestionCircle, FaChevronLeft, FaChevronRight, FaWifi, FaBatteryFull, FaVolumeUp } from 'react-icons/fa';
 
 interface MenuItem {
-  label?: string;
-  shortcut?: string;
-  onClick?: () => void;
-  divider?: boolean;
-  disabled?: boolean;
-}
-
-interface MenuDropdownProps {
   label: string;
-  items: MenuItem[];
+  items: {
+    label?: string;
+    shortcut?: string;
+    onClick?: () => void;
+    divider?: boolean;
+    disabled?: boolean;
+  }[];
   theme: 'dark' | 'light';
 }
 
-function MenuDropdown({ label, items, theme }: MenuDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={dropdownRef} className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`px-3 py-1 rounded-lg transition-colors ${
-          isOpen
-            ? theme === 'dark'
-              ? 'bg-white/10'
-              : 'bg-black/10'
-            : `hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`
-        }`}
-      >
-        {label}
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`absolute left-0 top-full mt-1 py-1 rounded-xl shadow-xl z-50 min-w-[200px] ${
-              theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
-            } backdrop-blur-xl border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
-          >
-            {items.map((item, index) => (
-              <div key={index}>
-                {item.divider ? (
-                  <div className={`my-1 border-t ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
-                ) : (
-                  <button
-                    onClick={() => {
-                      item.onClick?.();
-                      setIsOpen(false);
-                    }}
-                    disabled={item.disabled}
-                    className={`w-full px-4 py-1.5 text-left flex items-center justify-between ${
-                      item.disabled
-                        ? theme === 'dark'
-                          ? 'text-white/30'
-                          : 'text-black/30'
-                        : theme === 'dark'
-                        ? 'hover:bg-white/10'
-                        : 'hover:bg-black/5'
-                    } transition-colors`}
-                  >
-                    <span>{item.label}</span>
-                    {item.shortcut && (
-                      <span className={`ml-4 text-xs ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
-                        {item.shortcut}
-                      </span>
-                    )}
-                  </button>
-                )}
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-const apps: { [key: string]: React.ComponentType } = {
-  pomodoro: PomodoroTimer,
-  music: MusicPlayer,
-  notes: Notes,
-
-  settings: Settings,
-  asmr: ASMRPlayer,
-};
+const defaultMenuItems: MenuItem[] = [
+  {
+    label: 'File',
+    items: [
+      { label: 'New Window', shortcut: '⌘N' },
+      { label: 'Close Window', shortcut: '⌘W' },
+      { divider: true },
+      { label: 'Exit', shortcut: '⌘Q' },
+    ],
+    theme: 'dark',
+  },
+  {
+    label: 'Edit',
+    items: [
+      { label: 'Undo', shortcut: '⌘Z' },
+      { label: 'Redo', shortcut: '⌘⇧Z' },
+      { divider: true },
+      { label: 'Cut', shortcut: '⌘X' },
+      { label: 'Copy', shortcut: '⌘C' },
+      { label: 'Paste', shortcut: '⌘V' },
+    ],
+    theme: 'dark',
+  },
+  {
+    label: 'View',
+    items: [
+      { label: 'Toggle Fullscreen', shortcut: 'F11' },
+      { divider: true },
+      { label: 'Zoom In', shortcut: '⌘+' },
+      { label: 'Zoom Out', shortcut: '⌘-' },
+      { label: 'Reset Zoom', shortcut: '⌘0' },
+    ],
+    theme: 'dark',
+  },
+];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuthStore();
-  const { theme, accentColor, wallpaper } = useSettingsStore();
   const router = useRouter();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { user, loading } = useAuthStore();
+  const { theme, accentColor, wallpaper, isVideoWallpaper } = useSettingsStore();
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [menuItems, setMenuItems] = useState(defaultMenuItems);
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
 
+  // Update time and date
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [loading, user, router]);
+    const updateDateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setCurrentDate(now.toLocaleDateString([], { month: 'short', day: 'numeric' }));
+    };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const timer = setInterval(() => {
-        setCurrentTime(new Date());
-      }, 1000);
-      return () => clearInterval(timer);
-    }
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Add click outside handler for calendar
+  // Handle calendar click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
@@ -156,13 +99,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  // Calendar navigation
+  const handlePrevMonth = () => {
+    setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -173,78 +116,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return { daysInMonth, firstDayOfMonth };
   };
 
-  const { daysInMonth, firstDayOfMonth } = getDaysInMonth(selectedMonth);
+  // Update menu items theme
+  useEffect(() => {
+    setMenuItems(defaultMenuItems.map(item => ({ ...item, theme })));
+  }, [theme]);
 
-  const handlePrevMonth = () => {
-    setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
-  };
-
-  const handleNextMonth = () => {
-    setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
-  };
-
-  const handleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
-
-  const handleReload = () => {
-    window.location.reload();
-  };
-
-  const fileMenuItems: MenuItem[] = [
-    { label: 'New Note', shortcut: '⌘N' },
-    { label: 'New Window', shortcut: '⌘⇧N', onClick: () => window.open(window.location.href, '_blank') },
-    { divider: true },
-    { label: 'Save', shortcut: '⌘S' },
-    { label: 'Save As...', shortcut: '⌘⇧S' },
-    { divider: true },
-    { label: 'Close Window', shortcut: '⌘W', onClick: () => window.close() },
-  ];
-
-  const editMenuItems: MenuItem[] = [
-    { label: 'Undo', shortcut: '⌘Z', onClick: () => document.execCommand('undo') },
-    { label: 'Redo', shortcut: '⌘⇧Z', onClick: () => document.execCommand('redo') },
-    { divider: true },
-    { label: 'Cut', shortcut: '⌘X', onClick: () => document.execCommand('cut') },
-    { label: 'Copy', shortcut: '⌘C', onClick: () => document.execCommand('copy') },
-    { label: 'Paste', shortcut: '⌘V', onClick: () => document.execCommand('paste') },
-    { divider: true },
-    { label: 'Select All', shortcut: '⌘A', onClick: () => document.execCommand('selectAll') },
-  ];
-
-  const viewMenuItems: MenuItem[] = [
-    { label: 'Toggle Dark Mode', onClick: () => useSettingsStore.setState({ theme: theme === 'dark' ? 'light' : 'dark' }) },
-    { divider: true },
-    { label: 'Zoom In', shortcut: '⌘+' },
-    { label: 'Zoom Out', shortcut: '⌘-' },
-    { label: 'Reset Zoom', shortcut: '⌘0' },
-    { divider: true },
-    { label: 'Enter Full Screen', shortcut: 'F11', onClick: handleFullscreen },
-  ];
-
-  const windowMenuItems: MenuItem[] = [
-    { label: 'Minimize', shortcut: '⌘M' },
-    { label: 'Zoom' },
-    { divider: true },
-    { label: 'Bring All to Front' },
-  ];
-
-  const helpMenuItems: MenuItem[] = [
-    { label: 'Welcome Guide' },
-    { label: 'Documentation' },
-    { divider: true },
-    { label: 'Keyboard Shortcuts', shortcut: '⌘K' },
-    { divider: true },
-    { label: 'Check for Updates...' },
-    { divider: true },
-    { label: 'About LofiStudy' },
-  ];
 
   if (loading) {
     return (
@@ -287,77 +172,147 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top Bar */}
-      <div className="relative z-50">
-        <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xl" />
-        <div className="relative flex items-center justify-between px-4 h-10 border-b border-white/10">
-          {/* Left Menu */}
-          <div className="flex items-center space-x-2">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative"
+    <div className="min-h-screen h-screen relative overflow-hidden">
+      {/* Background */}
+      <div className="fixed inset-0 z-0">
+        {isVideoWallpaper ? (
+          <video
+            src={wallpaper}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <Image
+            src={wallpaper}
+            alt="Wallpaper"
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
+        <div className="absolute inset-0 backdrop-blur-sm" />
+      </div>
+
+      {/* Menu Bar */}
+      <div className={`fixed top-0 left-0 right-0 h-8 z-40 ${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-sm flex items-center px-4 text-sm select-none`}>
+        <div className="flex-1 flex items-center space-x-4">
+          {menuItems.map((item) => (
+            <button
+              key={item.label}
+              className={`px-3 py-1 rounded-lg transition-colors hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`}
             >
-              <div className="absolute inset-0 rounded-full bg-orange-500/20 blur-lg" />
-              <LofiLogo className="w-6 h-6 text-orange-500 relative" />
-            </motion.div>
-            <div className="flex items-center space-x-1">
-              <MenuDropdown label="File" items={fileMenuItems} theme={theme} />
-              <MenuDropdown label="Edit" items={editMenuItems} theme={theme} />
-              <MenuDropdown label="View" items={viewMenuItems} theme={theme} />
-              <MenuDropdown label="Window" items={windowMenuItems} theme={theme} />
-              <MenuDropdown label="Help" items={helpMenuItems} theme={theme} />
-            </div>
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Side */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowWelcomeGuide(true)}
+            className={`flex items-center space-x-2 px-3 py-1 rounded-lg transition-colors hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`}
+          >
+            <FaQuestionCircle className="w-4 h-4" />
+            <span>Guide</span>
+          </button>
+
+          {/* System Icons */}
+          <div className="flex items-center space-x-3 px-3 border-l border-r border-white/10">
+            <FaWifi className="w-4 h-4 text-white/60" />
+            <FaVolumeUp className="w-4 h-4 text-white/60" />
+            <FaBatteryFull className="w-4 h-4 text-white/60" />
           </div>
 
-          {/* Right Menu */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="flex items-center space-x-1 text-white/60">
-                <FaWifi className="w-4 h-4" />
-                <span>Connected</span>
-              </div>
-              <div className="flex items-center space-x-1 text-white/60">
-                <FaBatteryFull className="w-4 h-4" />
-                <span>100%</span>
-              </div>
-              <div className="flex items-center space-x-1 text-white/60">
-                <FaVolumeUp className="w-4 h-4" />
-              </div>
-            </div>
+          {/* Date and Time */}
+          <div className="relative">
             <button
               onClick={() => setShowCalendar(!showCalendar)}
-              className="px-3 py-1 rounded-lg hover:bg-white/10 transition-colors text-white/80"
+              className={`flex items-center space-x-2 px-3 py-1 rounded-lg transition-colors hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`}
             >
-              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <span>{currentTime}</span>
+              <span>•</span>
+              <span>{currentDate}</span>
             </button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSignOut}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
-            >
-              <FaSignOutAlt className="w-4 h-4" />
-            </motion.button>
+
+            {/* Calendar Dropdown */}
+            <AnimatePresence>
+              {showCalendar && (
+                <motion.div
+                  ref={calendarRef}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className={`absolute right-0 top-full mt-1 p-4 rounded-xl shadow-xl z-50 ${
+                    theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
+                  } backdrop-blur-xl border border-white/10`}
+                >
+                  {/* Calendar Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded">
+                      <FaChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="font-medium">
+                      {selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded">
+                      <FaChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                      <div key={day} className="text-white/40 text-xs py-1">{day}</div>
+                    ))}
+                    {Array.from({ length: getDaysInMonth(selectedMonth).firstDayOfMonth }).map((_, i) => (
+                      <div key={`empty-${i}`} className="p-2" />
+                    ))}
+                    {Array.from({ length: getDaysInMonth(selectedMonth).daysInMonth }).map((_, i) => (
+                      <button
+                        key={i + 1}
+                        className={`p-2 rounded hover:bg-white/10 transition-colors ${
+                          new Date().getDate() === i + 1 &&
+                          new Date().getMonth() === selectedMonth.getMonth() &&
+                          new Date().getFullYear() === selectedMonth.getFullYear()
+                            ? 'bg-orange-500 text-white'
+                            : ''
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleSignOut}
+            className={`flex items-center space-x-2 px-3 py-1 rounded-lg transition-colors hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'} ml-2`}
+          >
+            <FaSignOutAlt className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 relative">
+      <main className="relative z-10 h-[calc(100vh-8px)] pt-8 overflow-hidden">
         {children}
       </main>
 
       {/* Dock */}
-      <div className="relative z-50 p-4">
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-        <div className="relative flex justify-center">
-          <div className="bg-gray-900/30 backdrop-blur-xl border border-white/10 rounded-2xl p-2">
-            <Dock />
-          </div>
-        </div>
-      </div>
+      <Dock />
+
+      {/* Welcome Guide */}
+      {showWelcomeGuide && (
+        <WelcomeGuide onClose={() => setShowWelcomeGuide(false)} />
+      )}
     </div>
   );
 } 

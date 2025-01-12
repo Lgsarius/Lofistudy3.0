@@ -112,14 +112,14 @@ export function Dock() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex justify-center p-4" ref={dockRef}>
+    <div className="fixed bottom-0 left-0 right-0 flex justify-center p-2 z-50" ref={dockRef}>
       <motion.div
-        className={`${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-2xl border ${theme === 'dark' ? 'border-white/20' : 'border-black/20'} rounded-2xl p-3 shadow-2xl`}
+        className={`${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-2xl border ${theme === 'dark' ? 'border-white/20' : 'border-black/20'} rounded-2xl p-2 shadow-2xl`}
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
       >
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-3">
           {apps.map((app) => {
             const Icon = app.icon;
             const isOpen = windows.some((w) => w.type === app.id);
@@ -130,15 +130,15 @@ export function Dock() {
                 key={app.id}
                 onClick={() => handleAppClick(app)}
                 whileHover={{ 
-                  scale: 1.2,
-                  y: -10,
+                  scale: 1.1,
+                  y: -8,
                 }}
                 whileTap={{ scale: 0.95 }}
                 className="relative group"
               >
                 {/* App Icon */}
                 <div
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all
+                  className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-all
                     ${isOpen 
                       ? isMinimized
                         ? `${theme === 'dark' ? 'bg-white/10 text-white/60' : 'bg-black/10 text-black/60'}`
@@ -150,20 +150,20 @@ export function Dock() {
                     backgroundColor: isOpen && !isMinimized ? `${accentColor}30` : undefined,
                   }}
                 >
-                  <Icon className="w-8 h-8" />
+                  <Icon className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
 
                 {/* App Indicator */}
                 <AnimatePresence>
                   {isOpen && !isMinimized && (
                     <motion.div 
-                      className="absolute -bottom-2 left-1/2 transform -translate-x-1/2"
+                      className="absolute -bottom-1 left-1/2 transform -translate-x-1/2"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
                     >
                       <div 
-                        className="w-1.5 h-1.5 rounded-full"
+                        className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full"
                         style={{ backgroundColor: accentColor }}
                       />
                     </motion.div>
@@ -171,8 +171,8 @@ export function Dock() {
                 </AnimatePresence>
 
                 {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className={`${theme === 'dark' ? 'bg-gray-900/90' : 'bg-white/90'} ${theme === 'dark' ? 'text-white' : 'text-black'} text-sm px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl`}>
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className={`${theme === 'dark' ? 'bg-gray-900/90' : 'bg-white/90'} ${theme === 'dark' ? 'text-white' : 'text-black'} text-xs md:text-sm px-2 py-1 rounded-lg whitespace-nowrap shadow-xl`}>
                     {app.title}
                   </div>
                 </div>

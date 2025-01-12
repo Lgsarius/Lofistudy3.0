@@ -10,8 +10,8 @@ import { Resizable } from 're-resizable';
 import { FaWindowMaximize, FaWindowRestore } from 'react-icons/fa';
 
 const MENU_BAR_HEIGHT = 20; // Height of the top menu bar
-const DOCK_HEIGHT = 130; // Increased dock height for better spacing
-const DOCK_SPACING = 20; // Additional spacing above dock
+const DOCK_HEIGHT = 80; // Reduced dock height
+const DOCK_SPACING = 10; // Reduced spacing
 
 interface WindowData {
   id: string;
@@ -48,17 +48,34 @@ export function Window({ window: windowData, children }: WindowProps) {
   useEffect(() => {
     if (typeof globalThis.window !== 'undefined' && mounted) {
       const updateBounds = () => {
+        const minWidth = 400; // Minimum window width
+        const minHeight = 300; // Minimum window height
+        const maxWidth = Math.max(minWidth, globalThis.window.innerWidth - 40); // 20px padding on each side
+        const maxHeight = Math.max(minHeight, globalThis.window.innerHeight - MENU_BAR_HEIGHT - DOCK_HEIGHT - DOCK_SPACING - 40); // Additional padding
+
         setBounds({
-          width: globalThis.window.innerWidth,
-          height: globalThis.window.innerHeight - MENU_BAR_HEIGHT - DOCK_HEIGHT - DOCK_SPACING,
+          width: maxWidth,
+          height: maxHeight,
         });
+
+        // Update window position if it's outside bounds
+        if (windowData.position.x + windowData.size.width > maxWidth) {
+          updateWindow(windowData.id, {
+            position: { ...windowData.position, x: Math.max(0, maxWidth - windowData.size.width) }
+          });
+        }
+        if (windowData.position.y + windowData.size.height > maxHeight) {
+          updateWindow(windowData.id, {
+            position: { ...windowData.position, y: Math.max(0, maxHeight - windowData.size.height) }
+          });
+        }
       };
 
       updateBounds();
       globalThis.window.addEventListener('resize', updateBounds);
       return () => globalThis.window.removeEventListener('resize', updateBounds);
     }
-  }, [mounted]);
+  }, [mounted, windowData.id, windowData.position, windowData.size, updateWindow]);
 
   useEffect(() => {
     if (!windowData.isMaximized) {

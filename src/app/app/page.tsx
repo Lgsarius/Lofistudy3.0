@@ -112,41 +112,7 @@ export default function AppPage() {
                 <span>Show Welcome Guide</span>
               </motion.button>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full max-w-4xl px-4 mt-16"
-              >
-                <Feature
-                  icon={FaHeadphones}
-                  title="Music Player"
-                  description="Immerse yourself in Lo-Fi beats while you work. Choose from curated playlists or add your own tracks."
-                  delay={0.6}
-                  color="orange"
-                />
-                <Feature
-                  icon={FaClock}
-                  title="Pomodoro Timer"
-                  description="Stay focused with customizable work sessions. Track your productivity and take structured breaks."
-                  delay={0.7}
-                  color="purple"
-                />
-                <Feature
-                  icon={FaBook}
-                  title="Notes"
-                  description="Capture your thoughts with our markdown editor. Organize your notes and ideas effortlessly."
-                  delay={0.8}
-                  color="blue"
-                />
-                <Feature
-                  icon={FaCog}
-                  title="Settings"
-                  description="Personalize your workspace with custom themes, backgrounds, and preferences."
-                  delay={0.9}
-                  color="green"
-                />
-              </motion.div>
+              
             </motion.div>
           )}
         </AnimatePresence>

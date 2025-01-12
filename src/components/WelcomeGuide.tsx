@@ -2,9 +2,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence as FramerPresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IconType } from 'react-icons';
-import { FaPlay, FaPause, FaClock, FaMusic, FaBook, FaCog, FaWaveSquare, FaListUl, FaTimes, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
+import { FaMusic, FaClock, FaStickyNote, FaCog, FaWaveSquare, FaListUl, FaComments, FaTimes, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
+
+interface WelcomeGuideProps {
+  onClose: () => void;
+}
 
 interface GuideStep {
   title: string;
@@ -14,158 +18,160 @@ interface GuideStep {
 
 const guideSteps: GuideStep[] = [
   {
-    title: 'Pomodoro Timer',
-    description: 'Stay focused with customizable work sessions. Use the play/pause button to control your timer, and switch between work and break modes.',
-    icon: FaClock,
+    title: 'Welcome to LofiStudy',
+    description: 'Your personal workspace for focused study and productivity. Click on any icon in the dock below to get started.',
+    icon: FaMusic
   },
   {
     title: 'Music Player',
-    description: 'Listen to Lo-Fi beats while you work. Add your favorite YouTube music or choose from curated playlists.',
-    icon: FaMusic,
+    description: 'Immerse yourself in Lo-Fi beats while you work. Choose from curated playlists or add your own tracks.',
+    icon: FaMusic
   },
   {
-    title: 'ASMR Mixer',
-    description: 'Create your perfect ambient soundscape by mixing different ASMR sounds. Adjust volumes individually for the perfect blend.',
-    icon: FaWaveSquare,
-  },
-  {
-    title: 'Todo List',
-    description: 'Keep track of your tasks. Add, complete, and delete todos to stay organized during your study sessions.',
-    icon: FaListUl,
+    title: 'Pomodoro Timer',
+    description: 'Stay focused with customizable work sessions. Track your productivity and take structured breaks.',
+    icon: FaClock
   },
   {
     title: 'Notes',
-    description: 'Take quick notes with markdown support. Organize your thoughts and study materials in one place.',
-    icon: FaBook,
+    description: 'Capture your thoughts with our markdown editor. Organize your notes and ideas effortlessly.',
+    icon: FaStickyNote
+  },
+  {
+    title: 'ASMR Mixer',
+    description: 'Create your perfect ambient soundscape by mixing different ASMR sounds.',
+    icon: FaWaveSquare
+  },
+  {
+    title: 'Todo List',
+    description: 'Keep track of your tasks and stay organized with our simple todo list.',
+    icon: FaListUl
+  },
+  {
+    title: 'Chat',
+    description: 'Connect with other students and share your study progress.',
+    icon: FaComments
   },
   {
     title: 'Settings',
-    description: 'Customize your experience. Change themes, wallpapers, and adjust timer durations to match your preferences.',
-    icon: FaCog,
-  },
+    description: 'Personalize your workspace with custom themes, backgrounds, and preferences.',
+    icon: FaCog
+  }
 ];
-
-interface WelcomeGuideProps {
-  onClose: () => void;
-}
 
 export default function WelcomeGuide({ onClose }: WelcomeGuideProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
 
-  const nextStep = () => {
+  const handleNext = () => {
     if (currentStep < guideSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleClose();
+      setCurrentStep(prev => prev + 1);
     }
   };
 
-  const prevStep = () => {
+  const handlePrev = () => {
     if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
-  };
-
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 300); // Wait for exit animation
   };
 
   return (
-    <FramerPresence mode="wait">
-      {isVisible && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            onClick={handleClose}
-          />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative bg-gray-900/90 backdrop-blur-xl text-white rounded-2xl p-10 max-w-xl w-full mx-4 shadow-2xl border border-white/10"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-white/60 hover:text-white transition-colors hover:bg-white/10 rounded-lg"
+        >
+          <FaTimes className="w-5 h-5" />
+        </button>
 
-          {/* Guide Card */}
+        {/* Content */}
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl z-50"
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="text-center mb-8"
           >
-            {/* Close Button */}
-            <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-orange-500/20 flex items-center justify-center">
+              {(() => {
+                const Icon = guideSteps[currentStep].icon;
+                return <Icon className="w-10 h-10 text-orange-500" />;
+              })()}
+            </div>
+            <motion.h2 
+              className="text-3xl font-bold mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              <FaTimes />
-            </button>
-
-            {/* Content */}
-            <div className="text-center mb-8">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="flex flex-col items-center"
-              >
-                {/* Icon */}
-                <div className="w-20 h-20 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-6">
-                  {(() => {
-                    const Icon = guideSteps[currentStep].icon;
-                    return <Icon className="w-10 h-10 text-orange-500" />;
-                  })()}
-                </div>
-
-                {/* Title */}
-                <h3 className="text-2xl font-bold text-white mb-4">
-                  {guideSteps[currentStep].title}
-                </h3>
-
-                {/* Description */}
-                <p className="text-white/70 text-lg leading-relaxed">
-                  {guideSteps[currentStep].description}
-                </p>
-              </motion.div>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className={`p-3 rounded-xl flex items-center space-x-2 ${
-                  currentStep === 0
-                    ? 'text-white/30 cursor-not-allowed'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
-                } transition-colors`}
-              >
-                <FaChevronLeft />
-                <span>Previous</span>
-              </button>
-
-              <div className="flex space-x-2">
-                {guideSteps.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-2 h-2 rounded-full ${
-                      index === currentStep ? 'bg-orange-500' : 'bg-white/20'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={nextStep}
-                className="p-3 rounded-xl flex items-center space-x-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <span>{currentStep === guideSteps.length - 1 ? 'Finish' : 'Next'}</span>
-                <FaChevronRight />
-              </button>
-            </div>
+              {guideSteps[currentStep].title}
+            </motion.h2>
+            <motion.p 
+              className="text-white/80 text-lg leading-relaxed"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {guideSteps[currentStep].description}
+            </motion.p>
           </motion.div>
-        </>
-      )}
-    </FramerPresence>
+        </AnimatePresence>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handlePrev}
+            disabled={currentStep === 0}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              currentStep === 0
+                ? 'text-white/30 cursor-not-allowed'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            <FaChevronLeft className="w-4 h-4" />
+            <span>Previous</span>
+          </button>
+
+          {/* Progress indicators */}
+          <div className="flex items-center space-x-2">
+            {guideSteps.map((_, index) => (
+              <motion.div
+                key={index}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === currentStep ? 'bg-orange-500 scale-125' : 'bg-white/20'
+                }`}
+                initial={false}
+                animate={{
+                  scale: index === currentStep ? 1.25 : 1,
+                  opacity: index === currentStep ? 1 : 0.5
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={currentStep === guideSteps.length - 1 ? onClose : handleNext}
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg text-white hover:bg-white/10 transition-colors"
+          >
+            <span>{currentStep === guideSteps.length - 1 ? 'Get Started' : 'Next'}</span>
+            {currentStep < guideSteps.length - 1 && <FaChevronRight className="w-4 h-4" />}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 } 
