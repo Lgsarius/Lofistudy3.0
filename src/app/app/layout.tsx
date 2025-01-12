@@ -26,41 +26,95 @@ interface MenuItem {
   theme: 'dark' | 'light';
 }
 
-const defaultMenuItems: MenuItem[] = [
-  {
-    label: 'File',
-    items: [
-      { label: 'New Window', shortcut: '⌘N' },
-      { label: 'Close Window', shortcut: '⌘W' },
-      { divider: true },
-      { label: 'Exit', shortcut: '⌘Q' },
-    ],
-    theme: 'dark',
-  },
-  {
-    label: 'Edit',
-    items: [
-      { label: 'Undo', shortcut: '⌘Z' },
-      { label: 'Redo', shortcut: '⌘⇧Z' },
-      { divider: true },
-      { label: 'Cut', shortcut: '⌘X' },
-      { label: 'Copy', shortcut: '⌘C' },
-      { label: 'Paste', shortcut: '⌘V' },
-    ],
-    theme: 'dark',
-  },
-  {
-    label: 'View',
-    items: [
-      { label: 'Toggle Fullscreen', shortcut: 'F11' },
-      { divider: true },
-      { label: 'Zoom In', shortcut: '⌘+' },
-      { label: 'Zoom Out', shortcut: '⌘-' },
-      { label: 'Reset Zoom', shortcut: '⌘0' },
-    ],
-    theme: 'dark',
-  },
-];
+interface MenuDropdownProps {
+  label: string;
+  items: {
+    label?: string;
+    shortcut?: string;
+    onClick?: () => void;
+    divider?: boolean;
+    disabled?: boolean;
+  }[];
+  theme: 'dark' | 'light';
+}
+
+function MenuDropdown({ label, items, theme }: MenuDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`px-3 py-1 rounded-lg transition-colors ${
+          isOpen
+            ? theme === 'dark'
+              ? 'bg-white/10'
+              : 'bg-black/10'
+            : `hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`
+        }`}
+      >
+        {label}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`absolute left-0 top-full mt-1 py-1 rounded-xl shadow-xl z-50 min-w-[200px] ${
+              theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
+            } backdrop-blur-xl border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+          >
+            {items.map((item, index) => (
+              <div key={index}>
+                {item.divider ? (
+                  <div className={`my-1 border-t ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                ) : (
+                  <button
+                    onClick={() => {
+                      item.onClick?.();
+                      setIsOpen(false);
+                    }}
+                    disabled={item.disabled}
+                    className={`w-full px-4 py-1.5 text-left flex items-center justify-between ${
+                      item.disabled
+                        ? theme === 'dark'
+                          ? 'text-white/30'
+                          : 'text-black/30'
+                        : theme === 'dark'
+                        ? 'hover:bg-white/10'
+                        : 'hover:bg-black/5'
+                    } transition-colors`}
+                  >
+                    <span>{item.label}</span>
+                    {item.shortcut && (
+                      <span className={`ml-4 text-xs ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
+                        {item.shortcut}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -71,8 +125,60 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
-  const [menuItems, setMenuItems] = useState(defaultMenuItems);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
+
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const [menuItems, setMenuItems] = useState([
+    {
+      label: 'File',
+      items: [
+        { label: 'New Window', shortcut: '⌘N', onClick: () => window.open(window.location.href, '_blank') },
+        { label: 'Close Window', shortcut: '⌘W', onClick: () => window.close() },
+        { divider: true },
+        { label: 'Exit', shortcut: '⌘Q', onClick: handleSignOut },
+      ],
+      theme
+    },
+    {
+      label: 'Edit',
+      items: [
+        { label: 'Undo', shortcut: '⌘Z', onClick: () => document.execCommand('undo') },
+        { label: 'Redo', shortcut: '⌘⇧Z', onClick: () => document.execCommand('redo') },
+        { divider: true },
+        { label: 'Cut', shortcut: '⌘X', onClick: () => document.execCommand('cut') },
+        { label: 'Copy', shortcut: '⌘C', onClick: () => document.execCommand('copy') },
+        { label: 'Paste', shortcut: '⌘V', onClick: () => document.execCommand('paste') },
+      ],
+      theme
+    },
+    {
+      label: 'View',
+      items: [
+        { label: 'Toggle Fullscreen', shortcut: 'F11', onClick: handleFullscreen },
+        { divider: true },
+        { label: 'Zoom In', shortcut: '⌘+' },
+        { label: 'Zoom Out', shortcut: '⌘-' },
+        { label: 'Reset Zoom', shortcut: '⌘0' },
+      ],
+      theme
+    },
+  ]);
 
   // Update time and date
   useEffect(() => {
@@ -86,6 +192,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const interval = setInterval(updateDateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Update menu items theme
+  useEffect(() => {
+    setMenuItems(prev => prev.map(item => ({ ...item, theme })));
+  }, [theme]);
 
   // Handle calendar click outside
   useEffect(() => {
@@ -114,21 +225,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     return { daysInMonth, firstDayOfMonth };
-  };
-
-  // Update menu items theme
-  useEffect(() => {
-    setMenuItems(defaultMenuItems.map(item => ({ ...item, theme })));
-  }, [theme]);
-
-  // Handle sign out
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
   };
 
   if (loading) {
@@ -200,12 +296,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className={`fixed top-0 left-0 right-0 h-8 z-40 ${theme === 'dark' ? 'bg-gray-900/80' : 'bg-white/80'} backdrop-blur-sm flex items-center px-4 text-sm select-none`}>
         <div className="flex-1 flex items-center space-x-4">
           {menuItems.map((item) => (
-            <button
-              key={item.label}
-              className={`px-3 py-1 rounded-lg transition-colors hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`}
-            >
-              {item.label}
-            </button>
+            <MenuDropdown key={item.label} {...item} />
           ))}
         </div>
 
@@ -245,7 +336,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`absolute right-0 top-full mt-1 p-4 rounded-xl shadow-xl z-50 ${
+                  className={`absolute right-0 top-full mt-1 p-4 rounded-xl shadow-xl z-50 w-[300px] ${
                     theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
                   } backdrop-blur-xl border border-white/10`}
                 >
