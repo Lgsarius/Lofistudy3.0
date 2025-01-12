@@ -1,8 +1,8 @@
 /* eslint-disable */
 'use client';
 
-import { useEffect } from 'react';
-import { FaPlay, FaPause, FaRedo, FaBrain, FaCoffee } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaPlay, FaPause, FaRedo, FaBrain, FaCoffee, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
 import { useSettingsStore } from '@/lib/store/settings';
 import { usePomodoroStore } from '@/lib/store/pomodoro';
 
@@ -22,27 +22,69 @@ export function PomodoroTimer() {
     syncTimerState,
   } = usePomodoroStore();
 
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Sound-related state
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [volume, setVolume] = useState(50);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+  // Initialize audio after mount
+  useEffect(() => {
+    if (mounted) {
+      const audioElement = new Audio('/sounds/bell.mp3');
+      audioElement.volume = volume / 100;
+      setAudio(audioElement);
+    }
+  }, [mounted, volume]);
+
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+  };
+
+  // Play sound when timer completes
+  useEffect(() => {
+    if (mounted && timeLeft === 0 && soundEnabled && audio) {
+      audio.play().catch(console.error);
+    }
+  }, [timeLeft, soundEnabled, audio, mounted]);
+
   // Sync timer state when component mounts or window gains focus
   useEffect(() => {
-    syncTimerState();
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncTimerState();
-      }
-    };
+    let mounted = true;
 
-    const handleFocus = () => {
+    if (mounted) {
       syncTimerState();
-    };
+      
+      const handleVisibilityChange = () => {
+        if (document?.visibilityState === 'visible') {
+          syncTimerState();
+        }
+      };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
+      const handleFocus = () => {
+        syncTimerState();
+      };
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+      }
+
+      return () => {
+        mounted = false;
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+          window.removeEventListener('focus', handleFocus);
+        }
+      };
+    }
   }, [syncTimerState]);
 
   // Timer tick effect
@@ -109,93 +151,132 @@ export function PomodoroTimer() {
   const progress = timeLeft / (mode === 'work' ? pomodoroWorkDuration * 60 : pomodoroBreakDuration * 60);
 
   return (
-    <div className="h-full flex flex-col text-white">
-      <div className="flex-1 flex flex-col items-center justify-center space-y-8 relative">
-        {/* Progress Ring */}
-        <div className="relative">
-          <svg className="w-64 h-64 transform -rotate-90">
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              className="stroke-white/10 fill-none"
-              strokeWidth="4"
-            />
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              className="fill-none transition-all duration-200"
-              strokeWidth="4"
-              stroke="#f97316"
-              strokeDasharray={2 * Math.PI * 120}
-              strokeDashoffset={2 * Math.PI * 120 * (1 - progress)}
-            />
-          </svg>
-          
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-6xl font-mono font-bold tracking-tight">
+    <div className="h-full p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        {/* Title */}
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white/90 mb-6">
+          Pomodoro Timer
+        </h2>
+
+        {/* Timer Display */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6 mb-6">
+          <div className="flex flex-col items-center">
+            {/* Mode Selector */}
+            <div className="flex space-x-4 mb-6">
+              <button
+                onClick={() => setMode('work')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  mode === 'work'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-white/60 hover:bg-white/10'
+                }`}
+              >
+                Work
+              </button>
+              <button
+                onClick={() => setMode('break')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  mode === 'break'
+                    ? 'bg-orange-500 text-white'
+                    : 'text-white/60 hover:bg-white/10'
+                }`}
+              >
+                Break
+              </button>
+            </div>
+
+            {/* Timer */}
+            <div className="text-6xl md:text-7xl lg:text-8xl font-bold text-white/90 mb-8">
               {formatTime(timeLeft)}
-            </span>
-            <span className="text-lg mt-2 text-white/60">
-              {mode === 'work' ? 'Work Time' : mode === 'break' ? 'Break Time' : 'Long Break'}
-            </span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={toggleTimer}
+                className="w-16 h-16 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 transition-colors"
+              >
+                {isRunning ? (
+                  <FaPause className="w-6 h-6" />
+                ) : (
+                  <FaPlay className="w-6 h-6 ml-1" />
+                )}
+              </button>
+              <button
+                onClick={resetTimer}
+                className="w-16 h-16 rounded-full bg-white/10 text-white/60 flex items-center justify-center hover:bg-white/20 transition-colors"
+              >
+                <FaRedo className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center space-x-4">
-          <button 
-            className="p-4 rounded-full bg-orange-500/20 text-orange-500"
-            onClick={toggleTimer}
-          >
-            {isRunning ? <FaPause className="w-6 h-6" /> : <FaPlay className="w-6 h-6" />}
-          </button>
-          
-          <button 
-            className="p-4 rounded-full bg-white/10 text-white/80 hover:bg-white/20 transition-colors"
-            onClick={resetTimer}
-          >
-            <FaRedo className="w-6 h-6" />
-          </button>
-        </div>
+        {/* Settings */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+            Settings
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Work Duration */}
+            <div>
+              <label className="block text-sm text-white/60 mb-2">
+                Work Duration (minutes)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={pomodoroWorkDuration}
+                onChange={(e) => setPomodoroWorkDuration(Number(e.target.value))}
+                className="w-full px-4 py-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
 
-        {/* Mode Selector */}
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={() => switchMode('work')}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              mode === 'work' ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 hover:bg-white/10 text-white/60'
-            }`}
-          >
-            <FaBrain className="w-4 h-4" />
-            <span>Work</span>
-          </button>
+            {/* Break Duration */}
+            <div>
+              <label className="block text-sm text-white/60 mb-2">
+                Break Duration (minutes)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                value={pomodoroBreakDuration}
+                onChange={(e) => setPomodoroBreakDuration(Number(e.target.value))}
+                className="w-full px-4 py-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
 
-          <button 
-            onClick={() => switchMode('break')}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              mode === 'break' ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 hover:bg-white/10 text-white/60'
-            }`}
-          >
-            <FaCoffee className="w-4 h-4" />
-            <span>Break</span>
-          </button>
-
-          <button 
-            onClick={() => switchMode('long-break')}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              mode === 'long-break' ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 hover:bg-white/10 text-white/60'
-            }`}
-          >
-            <FaCoffee className="w-4 h-4" />
-            <span>Long Break</span>
-          </button>
-        </div>
-
-        {/* Session Counter */}
-        <div className="text-sm text-white/40">
-          Sessions completed: {sessionsCompleted}
+            {/* Sound Settings */}
+            <div className="md:col-span-2">
+              <label className="block text-sm text-white/60 mb-2">
+                Timer Sound
+              </label>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={toggleSound}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    soundEnabled
+                      ? 'bg-orange-500 text-white'
+                      : 'text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  {soundEnabled ? <FaVolumeUp /> : <FaVolumeMute />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={volume}
+                  onChange={(e) => setVolume(parseInt(e.target.value))}
+                  className="flex-1 accent-orange-500"
+                  disabled={!soundEnabled}
+                />
+                <span className="text-sm text-white/60">{volume}%</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

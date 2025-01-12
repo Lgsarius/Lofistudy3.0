@@ -284,39 +284,153 @@ export function Settings() {
   };
 
   return (
-    <div className="h-full flex">
-      {/* Sidebar */}
-      <div className={`w-48 border-r ${theme === 'dark' ? 'border-white/10' : 'border-black/10'} p-4 space-y-2`}>
-        {sections.map((section) => {
-          const Icon = section.icon;
-          return (
-            <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                activeSection === section.id
-                  ? `${theme === 'dark' ? 'bg-white/20 text-white' : 'bg-black/20 text-black'}`
-                  : `${theme === 'dark' ? 'text-white/60 hover:bg-white/10' : 'text-black/60 hover:bg-black/10'}`
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{section.label}</span>
-            </button>
-          );
-        })}
-      </div>
+    <div className="h-full p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        {/* Title */}
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white/90 mb-6">
+          Settings
+        </h2>
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        <motion.div
-          key={activeSection}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          {renderSection()}
-        </motion.div>
+        {/* Settings Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Theme Settings */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+              Theme
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  Color Mode
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                      theme === 'light'
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:bg-white/10'
+                    }`}
+                  >
+                    <FaSun className="w-4 h-4" />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                      theme === 'dark'
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:bg-white/10'
+                    }`}
+                  >
+                    <FaMoon className="w-4 h-4" />
+                    <span>Dark</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  Accent Color
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {accentColors.map((color) => (
+                    <button
+                      key={color.id}
+                      onClick={() => setAccentColor(color.color)}
+                      className={`w-8 h-8 rounded-lg transition-transform ${
+                        accentColor === color.color ? 'ring-2 ring-white scale-110' : ''
+                      }`}
+                      style={{ backgroundColor: color.color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Wallpaper Settings */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+              Wallpaper
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  Background Type
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setIsVideoWallpaper(false)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                      !isVideoWallpaper
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:bg-white/10'
+                    }`}
+                  >
+                    <FaImage className="w-4 h-4" />
+                    <span>Image</span>
+                  </button>
+                  <button
+                    onClick={() => setIsVideoWallpaper(true)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                      isVideoWallpaper
+                        ? 'bg-orange-500 text-white'
+                        : 'text-white/60 hover:bg-white/10'
+                    }`}
+                  >
+                    <FaVideo className="w-4 h-4" />
+                    <span>Video</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-2">
+                  {isVideoWallpaper ? 'Video URL' : 'Image URL'}
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={wallpaperUrl}
+                    onChange={(e) => setWallpaperUrl(e.target.value)}
+                    placeholder={`Enter ${isVideoWallpaper ? 'video' : 'image'} URL`}
+                    className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  <button
+                    onClick={handleWallpaperUpdate}
+                    className="px-4 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="aspect-video rounded-lg overflow-hidden bg-black/20">
+                {wallpaperUrl && (
+                  isVideoWallpaper ? (
+                    <video
+                      src={wallpaperUrl}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    <Image
+                      src={wallpaperUrl}
+                      alt="Wallpaper preview"
+                      fill
+                      className="object-cover"
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

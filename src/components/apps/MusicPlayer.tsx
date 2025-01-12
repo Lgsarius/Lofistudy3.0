@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage, FaHeadphones, FaChevronDown } from 'react-icons/fa';
+import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaYoutube, FaVideo, FaImage, FaHeadphones, FaChevronDown, FaBackward, FaForward, FaMusic } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '@/lib/store/settings';
 import ReactPlayer from 'react-player/youtube';
+import Image from 'next/image';
 
 interface VideoInfo {
   title: string;
@@ -45,6 +46,10 @@ export function MusicPlayer() {
   const playerRef = useRef<ReactPlayer>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [playlist, setPlaylist] = useState([]);
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [newTrackUrl, setNewTrackUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -127,179 +132,146 @@ export function MusicPlayer() {
     setShowVideo(!showVideo);
   };
 
+  const handleAddTrack = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/add-track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: newTrackUrl }),
+      });
+
+      const data = await response.json();
+      setPlaylist([...playlist, data]);
+      setCurrentTrack(data);
+      setNewTrackUrl('');
+    } catch (error) {
+      console.error('Error adding track:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div 
-      ref={containerRef}
-      className={`h-full flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}
-    >
-      {/* Stream Selector */}
-      <div className="p-4 border-b border-white/10 backdrop-blur-xl">
-        <div className="relative" ref={dropdownRef}>
-          <button 
-            className="w-full px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between"
-            onClick={() => setIsInputFocused(!isInputFocused)}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center">
-                <FaHeadphones className="w-5 h-5 text-white" />
+    <div className="h-full p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        {/* Title */}
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white/90 mb-6">
+          Music Player
+        </h2>
+
+        {/* Player Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Now Playing */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+              Now Playing
+            </h3>
+            <div className="aspect-square relative rounded-lg overflow-hidden mb-4">
+              {currentTrack ? (
+                <Image
+                  src={currentTrack.artwork}
+                  alt={currentTrack.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-black/20 flex items-center justify-center">
+                  <FaMusic className="w-12 h-12 text-white/20" />
+                </div>
+              )}
+            </div>
+
+            {/* Track Info */}
+            <div className="space-y-1 mb-4">
+              <h4 className="text-lg font-medium text-white/90">
+                {currentTrack?.title || 'No track selected'}
+              </h4>
+              <p className="text-sm text-white/60">
+                {currentTrack?.artist || 'Select a track to play'}
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-2 mb-4">
+              <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-500 transition-all duration-100"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">{videoInfo?.title || 'Select a stream'}</p>
-                <p className="text-xs text-white/60">{videoInfo?.channelName || 'Choose from below'}</p>
+              <div className="flex justify-between text-xs text-white/60">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
               </div>
             </div>
-            <FaChevronDown className={`w-4 h-4 text-white/60 transition-transform ${isInputFocused ? 'rotate-180' : ''}`} />
-          </button>
 
-          <AnimatePresence>
-            {isInputFocused && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute inset-x-0 top-full mt-2 bg-gray-800/90 backdrop-blur-xl rounded-lg border border-white/10 overflow-hidden z-50 shadow-xl"
+            {/* Controls */}
+            <div className="flex items-center justify-center space-x-4">
+              <button
+                onClick={handlePrevious}
+                className="p-2 text-white/60 hover:text-white/90 transition-colors"
+                disabled={!currentTrack}
               >
-                <div className="p-4 space-y-4">
-                  <div className="relative">
-                    <FaYoutube className="absolute left-3 top-2.5 text-red-500" />
-                    <form onSubmit={handleUrlSubmit}>
-                      <input
-                        type="text"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        placeholder="Paste YouTube URL here..."
-                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </form>
-                  </div>
-                  <div className="space-y-2">
-                    {defaultStreams.map((stream) => (
-                      <button
-                        key={stream.url}
-                        onClick={() => handleStreamSelect(stream)}
-                        className="w-full px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center space-x-3 active:bg-white/20"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center">
-                          <FaHeadphones className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="text-left flex-1">
-                          <p className="text-sm font-medium truncate">{stream.title}</p>
-                          <p className="text-xs text-white/60">{stream.channelName}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Player Area */}
-      <div className="flex-1 relative overflow-hidden">
-        {url && (
-          <>
-            {showVideo ? (
-              <ReactPlayer
-                ref={playerRef}
-                url={url}
-                playing={isPlaying}
-                volume={isMuted ? 0 : volume}
-                width="100%"
-                height="100%"
-                style={{ position: 'absolute', top: 0, left: 0 }}
-                onProgress={handleProgress}
-                onDuration={handleDuration}
-                controls={false}
-              />
-            ) : videoInfo && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-center bg-cover flex items-center justify-center"
-                style={{
-                  backgroundImage: `url(${videoInfo.thumbnail})`,
-                }}
-              >
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <div className="relative z-10 text-center p-6">
-                  <h2 className="text-2xl font-bold mb-2">{videoInfo.title}</h2>
-                  <p className="text-white/60">{videoInfo.channelName}</p>
-                </div>
-              </motion.div>
-            )}
-          </>
-        )}
-
-        {!url && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white/60">
-              <FaHeadphones className="w-16 h-16 mx-auto mb-4" />
-              <p>Select a stream to start listening</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Controls */}
-      <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800/50' : 'bg-gray-50'} backdrop-blur-xl`}>
-        {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-orange-500"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-1 text-xs text-white/60">
-            <span>{formatTime(progress * duration)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={handlePlayPause}
-              className="w-14 h-14 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500/30 transition-colors"
-            >
-              {isPlaying ? <FaPause className="w-6 h-6" /> : <FaPlay className="w-6 h-6" />}
-            </button>
-            <button
-              onClick={toggleVideoView}
-              className="p-3 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
-            >
-              {showVideo ? <FaImage /> : <FaVideo />}
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-white/60">
-              <button onClick={toggleMute}>
-                {isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+                <FaBackward className="w-5 h-5" />
               </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="w-24 h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500"
-                style={{
-                  background: `linear-gradient(to right, #f97316 ${volume * 100}%, rgba(255, 255, 255, 0.1) ${volume * 100}%)`,
-                }}
-              />
+              <button
+                onClick={togglePlay}
+                className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 transition-colors"
+                disabled={!currentTrack}
+              >
+                {isPlaying ? (
+                  <FaPause className="w-5 h-5" />
+                ) : (
+                  <FaPlay className="w-5 h-5 ml-1" />
+                )}
+              </button>
+              <button
+                onClick={handleNext}
+                className="p-2 text-white/60 hover:text-white/90 transition-colors"
+                disabled={!currentTrack}
+              >
+                <FaForward className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
-            >
-              {isFullscreen ? <FaCompress /> : <FaExpand />}
-            </button>
+          </div>
+
+          {/* Playlist */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+              Playlist
+            </h3>
+            <div className="space-y-2 max-h-[calc(100vh-24rem)] overflow-y-auto">
+              {playlist.map((track) => (
+                <button
+                  key={track.id}
+                  onClick={() => playTrack(track)}
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                    currentTrack?.id === track.id
+                      ? 'bg-orange-500 text-white'
+                      : 'hover:bg-white/10 text-white/60'
+                  }`}
+                >
+                  <div className="w-10 h-10 relative rounded overflow-hidden flex-shrink-0">
+                    <Image
+                      src={track.artwork}
+                      alt={track.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{track.title}</div>
+                    <div className="text-sm truncate opacity-60">
+                      {track.artist}
+                    </div>
+                  </div>
+                  <div className="text-sm opacity-60">{track.duration}</div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

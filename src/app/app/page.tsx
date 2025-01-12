@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaHeadphones, FaClock, FaBook, FaCog, FaQuestionCircle } from 'react-icons/fa';
 import { useSettingsStore } from '@/lib/store/settings';
 import Image from 'next/image';
-import TodoList from '@/components/apps/TodoList';
+import { TodoList } from '@/components/apps/TodoList';
 import WelcomeGuide from '@/components/WelcomeGuide';
 
 export default function AppPage() {

@@ -12,7 +12,7 @@ import WelcomeGuide from '@/components/WelcomeGuide';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { FaSignOutAlt, FaQuestionCircle, FaChevronLeft, FaChevronRight, FaWifi, FaBatteryFull, FaVolumeUp } from 'react-icons/fa';
+import { FaSignOutAlt, FaQuestionCircle, FaChevronLeft, FaChevronRight, FaWifi, FaBatteryFull, FaVolumeUp, FaVolumeMute, FaVolumeDown, FaVolumeOff } from 'react-icons/fa';
 
 interface MenuItem {
   label: string;
@@ -36,6 +36,77 @@ interface MenuDropdownProps {
     disabled?: boolean;
   }[];
   theme: 'dark' | 'light';
+}
+
+interface SystemControlProps {
+  icon: React.ReactNode;
+  label: string;
+  value?: number;
+  onClick?: () => void;
+  onValueChange?: (value: number) => void;
+  theme: 'dark' | 'light';
+}
+
+function SystemControl({ icon, label, value, onClick, onValueChange, theme }: SystemControlProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const controlRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (controlRef.current && !controlRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={controlRef} className="relative">
+      <button
+        onClick={() => {
+          if (onClick) onClick();
+          else setIsOpen(!isOpen);
+        }}
+        className={`p-1.5 rounded-lg transition-colors ${
+          isOpen
+            ? theme === 'dark'
+              ? 'bg-white/10'
+              : 'bg-black/10'
+            : `hover:${theme === 'dark' ? 'bg-white/10' : 'bg-black/10'}`
+        }`}
+      >
+        {icon}
+      </button>
+
+      {onValueChange && isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className={`absolute right-0 top-full mt-1 p-4 rounded-xl shadow-xl z-50 min-w-[200px] ${
+            theme === 'dark' ? 'bg-gray-800/95' : 'bg-white/95'
+          } backdrop-blur-xl border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+        >
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">{label}</span>
+              <span className="text-sm text-white/60">{value}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={value}
+              onChange={(e) => onValueChange(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
 }
 
 function MenuDropdown({ label, items, theme }: MenuDropdownProps) {
@@ -126,6 +197,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const calendarRef = useRef<HTMLDivElement>(null);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState(false);
+  const [volume, setVolume] = useState(50);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isWifiEnabled, setIsWifiEnabled] = useState(true);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [isCharging, setIsCharging] = useState(true);
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -227,6 +303,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return { daysInMonth, firstDayOfMonth };
   };
 
+  const getVolumeIcon = () => {
+    if (isMuted || volume === 0) return <FaVolumeMute />;
+    if (volume < 30) return <FaVolumeOff />;
+    if (volume < 70) return <FaVolumeDown />;
+    return <FaVolumeUp />;
+  };
+
+  // Battery monitoring
+  useEffect(() => {
+    if ('getBattery' in navigator) {
+      (navigator as any).getBattery().then((battery: any) => {
+        setBatteryLevel(Math.round(battery.level * 100));
+        setIsCharging(battery.charging);
+
+        battery.addEventListener('levelchange', () => {
+          setBatteryLevel(Math.round(battery.level * 100));
+        });
+        battery.addEventListener('chargingchange', () => {
+          setIsCharging(battery.charging);
+        });
+      });
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -312,9 +412,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* System Icons */}
           <div className="flex items-center space-x-3 px-3 border-l border-r border-white/10">
-            <FaWifi className="w-4 h-4 text-white/60" />
-            <FaVolumeUp className="w-4 h-4 text-white/60" />
-            <FaBatteryFull className="w-4 h-4 text-white/60" />
+            <SystemControl
+              icon={<FaWifi className={`w-4 h-4 ${isWifiEnabled ? 'text-white/60' : 'text-white/30'}`} />}
+              label="Wi-Fi"
+              theme={theme}
+              onClick={() => setIsWifiEnabled(!isWifiEnabled)}
+            />
+            <SystemControl
+              icon={getVolumeIcon()}
+              label="Volume"
+              value={volume}
+              theme={theme}
+              onClick={() => setIsMuted(!isMuted)}
+              onValueChange={setVolume}
+            />
+            <SystemControl
+              icon={
+                <div className="flex items-center space-x-1">
+                  <FaBatteryFull className={`w-4 h-4 ${isCharging ? 'text-green-500/60' : 'text-white/60'}`} />
+                  <span className="text-xs text-white/60">{batteryLevel}%</span>
+                </div>
+              }
+              label={`Battery ${isCharging ? '(Charging)' : ''}`}
+              value={batteryLevel}
+              theme={theme}
+            />
           </div>
 
           {/* Date and Time */}

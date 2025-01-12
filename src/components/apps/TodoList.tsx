@@ -11,7 +11,7 @@ interface Todo {
   userId: string;
 }
 
-export default function TodoList() {
+export function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const { user } = useAuthStore();
@@ -66,54 +66,104 @@ export default function TodoList() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900/50 backdrop-blur-md text-white p-6">
-      <h2 className="text-2xl font-bold mb-4">Todo List</h2>
-      
-      <form onSubmit={addTodo} className="flex gap-2 mb-4">
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          placeholder="Add a new todo..."
-          className="flex-1 px-4 py-2 rounded-lg bg-gray-800/50 border border-white/10 focus:outline-none focus:border-white/20"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition-colors"
-        >
-          <FaPlus />
-        </button>
-      </form>
+    <div className="h-full p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white/90 mb-6">
+          Todo List
+        </h2>
 
-      <div className="flex-1 overflow-y-auto">
-        {todos.map((todo) => (
-          <div
-            key={todo.id}
-            className="flex items-center gap-2 p-3 mb-2 rounded-lg bg-gray-800/30 border border-white/10"
-          >
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6 mb-6">
+          <form onSubmit={addTodo} className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              value={newTodo}
+              onChange={(e) => setNewTodo(e.target.value)}
+              placeholder="What needs to be done?"
+              className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
             <button
-              onClick={() => toggleTodo(todo)}
-              className={`p-2 rounded-lg transition-colors ${
-                todo.completed ? 'bg-green-500/50' : 'bg-gray-700/50'
-              }`}
+              type="submit"
+              disabled={!newTodo.trim()}
+              className="px-6 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FaCheck className={todo.completed ? 'opacity-100' : 'opacity-30'} />
+              Add Todo
             </button>
-            <span
-              className={`flex-1 ${
-                todo.completed ? 'line-through text-white/50' : 'text-white'
-              }`}
-            >
-              {todo.text}
-            </span>
-            <button
-              onClick={() => deleteTodo(todo.id)}
-              className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
-            >
-              <FaTrash />
-            </button>
+          </form>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6 flex flex-col">
+            <h3 className="text-lg md:text-xl font-semibold text-white/90 mb-4">
+              Active
+            </h3>
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {todos
+                .filter((todo) => !todo.completed)
+                .map((todo) => (
+                  <div
+                    key={todo.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+                  >
+                    <button
+                      onClick={() => toggleTodo(todo)}
+                      className="w-5 h-5 rounded border border-white/20 flex items-center justify-center hover:border-orange-500 transition-colors"
+                    >
+                      <FaCheck className="w-3 h-3 text-transparent group-hover:text-orange-500" />
+                    </button>
+                    <span className="flex-1 text-white/90">{todo.text}</span>
+                    <button
+                      onClick={() => deleteTodo(todo.id)}
+                      className="p-1 text-white/40 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+            </div>
           </div>
-        ))}
+
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg md:text-xl font-semibold text-white/90">
+                Completed
+              </h3>
+              <button
+                onClick={() => {
+                  // Implement clear completed todos functionality
+                }}
+                className="text-sm text-white/60 hover:text-white/90 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {todos
+                .filter((todo) => todo.completed)
+                .map((todo) => (
+                  <div
+                    key={todo.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+                  >
+                    <button
+                      onClick={() => toggleTodo(todo)}
+                      className="w-5 h-5 rounded border border-orange-500 flex items-center justify-center bg-orange-500"
+                    >
+                      <FaCheck className="w-3 h-3 text-white" />
+                    </button>
+                    <span className="flex-1 text-white/60 line-through">
+                      {todo.text}
+                    </span>
+                    <button
+                      onClick={() => deleteTodo(todo.id)}
+                      className="p-1 text-white/40 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

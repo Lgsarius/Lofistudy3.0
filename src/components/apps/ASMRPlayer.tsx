@@ -68,78 +68,93 @@ export function ASMRPlayer() {
   };
 
   return (
-    <div className="h-full flex flex-col p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-          ASMR Sound Mixer
+    <div className="h-full p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto h-full flex flex-col">
+        {/* Title */}
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white/90 mb-6">
+          ASMR Mixer
         </h2>
-        <button
-          onClick={stopAllSounds}
-          className={`px-4 py-2 rounded-lg ${
-            theme === 'dark'
-              ? 'bg-white/10 hover:bg-white/20'
-              : 'bg-black/10 hover:bg-black/20'
-          } transition-colors`}
-        >
-          Stop All
-        </button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {soundConfigs.map(config => {
-          const sound = sounds.find(s => s.id === config.id)!;
-          const Icon = config.icon;
-          return (
+
+        {/* Sound Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 flex-1 overflow-y-auto">
+          {sounds.map((sound) => (
             <div
-              key={config.id}
-              className={`p-4 rounded-xl ${
-                theme === 'dark'
-                  ? 'bg-white/5 hover:bg-white/10'
-                  : 'bg-black/5 hover:bg-black/10'
-              } transition-colors ${sound.isPlaying ? 'ring-2 ring-orange-500/50' : ''}`}
+              key={sound.id}
+              className="bg-white/5 backdrop-blur-lg rounded-xl p-4 flex flex-col items-center space-y-4 hover:bg-white/10 transition-colors"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-5 h-5 ${sound.isPlaying ? 'text-orange-500' : theme === 'dark' ? 'text-white/60' : 'text-black/60'}`} />
-                  <span className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                    {config.name}
-                  </span>
-                </div>
-                <button
-                  onClick={() => toggleSound(config.id)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    sound.isPlaying
-                      ? 'text-orange-500 bg-orange-500/20'
-                      : theme === 'dark'
-                      ? 'text-white/60 hover:bg-white/10'
-                      : 'text-black/60 hover:bg-black/10'
-                  }`}
-                >
-                  {sound.isPlaying ? <FaVolumeUp className="w-5 h-5" /> : <FaVolumeMute className="w-5 h-5" />}
-                </button>
+              {/* Sound Icon */}
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-orange-500/20 flex items-center justify-center">
+                {sound.icon}
               </div>
-              
-              <div className="flex items-center space-x-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={sound.volume}
-                  onChange={(e) => handleVolumeChange(config.id, Number(e.target.value))}
-                  className="flex-1 h-2 rounded-lg appearance-none bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-500 hover:[&::-webkit-slider-thumb]:bg-orange-400"
-                  style={{
-                    background: `linear-gradient(to right, #f97316 ${sound.volume}%, ${
-                      theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                    } ${sound.volume}%)`,
-                  }}
-                />
-                <span className={`w-12 text-right ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
-                  {sound.volume}%
-                </span>
-              </div>
+
+              {/* Sound Name */}
+              <span className="text-sm md:text-base text-white/80 text-center">
+                {sound.name}
+              </span>
+
+              {/* Volume Control */}
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={sound.volume}
+                onChange={(e) => handleVolumeChange(sound.id, Number(e.target.value))}
+                className="w-full"
+              />
+
+              {/* Play/Pause Button */}
+              <button
+                onClick={() => toggleSound(sound.id)}
+                className={`w-full py-2 px-4 rounded-lg text-sm md:text-base transition-colors ${
+                  sound.isPlaying
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                {sound.isPlaying ? 'Pause' : 'Play'}
+              </button>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Master Controls */}
+        <div className="mt-6 bg-white/5 backdrop-blur-lg rounded-xl p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-6">
+            <div className="flex items-center space-x-4 w-full md:w-auto">
+              <button
+                onClick={stopAllSounds}
+                className={`py-2 px-6 rounded-lg transition-colors ${
+                  sounds.some(s => s.isPlaying)
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                {sounds.some(s => s.isPlaying) ? 'Pause All' : 'Play All'}
+              </button>
+              <button
+                onClick={resetAllSounds}
+                className="py-2 px-6 rounded-lg bg-white/10 text-white/60 hover:bg-white/20 transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-4 w-full md:w-1/2">
+              <span className="text-white/60 text-sm md:text-base">Master Volume</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={soundConfigs.find(s => s.id === 'master')?.volume || 0}
+                onChange={(e) => handleVolumeChange('master', Number(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-white/60 text-sm md:text-base w-12 text-right">
+                {soundConfigs.find(s => s.id === 'master')?.volume || 0}%
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

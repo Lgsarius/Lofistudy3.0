@@ -2,13 +2,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaCalendar } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaMarkdown, FaSave, FaEye, FaEdit, FaSearch, FaFolder, FaCalendar, FaFileAlt, FaBars, FaTimes } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import { useSettingsStore } from '@/lib/store/settings';
 import { useAuthStore } from '@/lib/store/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, onSnapshot } from 'firebase/firestore';
+import { MDXEditor } from '@mdxeditor/editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Note {
   id: string;
@@ -67,6 +69,8 @@ export function Notes() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const folders = Array.from(new Set(notes.map(note => note.folder).filter(Boolean)));
 
@@ -246,6 +250,22 @@ export function Notes() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleCreateFolder = () => {
+    // Implementation for creating a new folder
+  };
+
+  const handleCreateNote = () => {
+    // Implementation for creating a new note
+  };
+
+  const handleTitleChange = (value: string) => {
+    // Implementation for changing the note title
+  };
+
+  const handleContentChange = (value: string) => {
+    // Implementation for changing the note content
+  };
+
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -257,254 +277,125 @@ export function Notes() {
   }
 
   return (
-    <div className={`h-full flex ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+    <div className="h-full flex">
       {/* Sidebar */}
-      <div className={`w-72 flex flex-col border-r ${theme === 'dark' ? 'border-white/10 bg-gray-900/50' : 'border-black/10 bg-white/50'} backdrop-blur-xl [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20`}>
-        {/* Search and New Note */}
-        <div className="p-4 space-y-4">
-          <div className="relative">
-            <FaSearch className={`absolute left-3 top-2.5 ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`} />
-            <input
-              type="text"
-              placeholder="Search notes... (⌘F)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg ${
-                theme === 'dark'
-                  ? 'bg-white/10 text-white placeholder-white/40'
-                  : 'bg-black/5 text-black placeholder-black/40'
-              } focus:outline-none focus:ring-2`}
-              style={{ '--tw-ring-color': `${accentColor}40` } as any}
-            />
-          </div>
-          <button
-            onClick={createNewNote}
-            className={`w-full px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors`}
-            style={{ 
-              backgroundColor: `${accentColor}20`,
-              color: accentColor 
-            }}
-          >
-            <FaPlus />
-            <span>New Note (⌘N)</span>
-          </button>
-        </div>
-
+      <div className={`w-48 md:w-64 border-r border-white/10 flex flex-col ${
+        showSidebar ? 'block' : 'hidden'
+      } md:block`}>
         {/* Folders */}
-        <div className={`px-2 py-3 border-t ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}>
-          <button
-            onClick={() => setSelectedFolder(null)}
-            className={`w-full px-3 py-1.5 rounded-lg flex items-center space-x-2 ${
-              !selectedFolder
-                ? theme === 'dark'
-                  ? 'bg-white/20'
-                  : 'bg-black/10'
-                : theme === 'dark'
-                ? 'hover:bg-white/10'
-                : 'hover:bg-black/5'
-            } transition-colors`}
-          >
-            <FaFolder className={theme === 'dark' ? 'text-white/60' : 'text-black/60'} />
-            <span>All Notes</span>
-          </button>
-          {folders.map(folder => (
+        <div className="p-4 flex-1 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white/90">Folders</h3>
             <button
-              key={folder}
-              onClick={() => folder && setSelectedFolder(folder)}
-              className={`w-full px-3 py-1.5 rounded-lg flex items-center space-x-2 ${
-                selectedFolder === folder
-                  ? theme === 'dark'
-                    ? 'bg-white/20'
-                    : 'bg-black/10'
-                  : theme === 'dark'
-                  ? 'hover:bg-white/10'
-                  : 'hover:bg-black/5'
-              } transition-colors`}
+              onClick={handleCreateFolder}
+              className="p-2 text-white/60 hover:text-white/90 transition-colors"
             >
-              <FaFolder className={theme === 'dark' ? 'text-white/60' : 'text-black/60'} />
-              <span>{folder}</span>
+              <FaPlus className="w-4 h-4" />
             </button>
-          ))}
+          </div>
+          <div className="space-y-1">
+            {folders.map((folder) => (
+              <button
+                key={folder}
+                onClick={() => folder && setSelectedFolder(folder)}
+                className={`w-full px-3 py-1.5 rounded-lg flex items-center space-x-2 ${
+                  selectedFolder === folder
+                    ? 'bg-orange-500 text-white'
+                    : 'text-white/60 hover:bg-white/10'
+                }`}
+              >
+                <FaFolder className="w-4 h-4" />
+                <span className="truncate">{folder}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Notes List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
-          {filteredNotes.map((note) => (
-            <motion.div
-              key={note.id}
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`relative group p-3 rounded-lg cursor-pointer transition-colors ${
-                selectedNoteId === note.id
-                  ? `bg-${accentColor}/20`
-                  : theme === 'dark'
-                  ? 'hover:bg-white/5'
-                  : 'hover:bg-black/5'
-              }`}
-              onClick={() => {
-                setSelectedNoteId(note.id);
-                setEditContent(note.content);
-              }}
+        <div className="p-4 flex-1 overflow-y-auto border-t border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white/90">Notes</h3>
+            <button
+              onClick={handleCreateNote}
+              className="p-2 text-white/60 hover:text-white/90 transition-colors"
+              disabled={!selectedFolder}
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{note.title}</h3>
-                  <p className={`text-sm truncate ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
-                    {new Date(note.lastModified).toLocaleDateString()}
-                  </p>
-                </div>
-                {note.id !== defaultNote.id && (
-                  <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity ${
-                      theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteNote(note.id);
-                    }}
-                  >
-                    <FaTrash className="w-4 h-4 text-red-500" />
-                  </motion.button>
-                )}
-              </div>
-            </motion.div>
-          ))}
+              <FaPlus className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-1">
+            {notes
+              .filter((note) => note.folder === selectedFolder)
+              .map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => setSelectedNote(note)}
+                  className={`w-full px-3 py-1.5 rounded-lg flex items-center space-x-2 ${
+                    selectedNote?.id === note.id
+                      ? 'bg-orange-500 text-white'
+                      : 'text-white/60 hover:bg-white/10'
+                  }`}
+                >
+                  <FaFileAlt className="w-4 h-4" />
+                  <span className="truncate">{note.title}</span>
+                </button>
+              ))}
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {currentNote && (
-          <>
-            <div className="p-4 border-b backdrop-blur-xl flex items-center justify-between space-x-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  {isEditing ? (
-                    <>
-                      <button
-                        onClick={handleSave}
-                        className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-                        style={{ color: accentColor }}
-                        title="Save (⌘S)"
-                      >
-                        <FaSave />
-                      </button>
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-                        style={{ color: accentColor }}
-                        title="Preview (⌘E)"
-                      >
-                        <FaEye />
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'}`}
-                      style={{ color: accentColor }}
-                      title="Edit (⌘E)"
-                    >
-                      <FaEdit />
-                    </button>
-                  )}
-                </div>
-                <div className={`text-sm ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
-                  <FaMarkdown className="inline-block mr-2" />
-                  Markdown supported
-                </div>
-              </div>
-              
-              <div className="relative">
-                <button
-                  onClick={() => setShowCalendar(!showCalendar)}
-                  className={`px-3 py-1.5 rounded-lg flex items-center space-x-2 transition-colors ${
-                    theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/10'
-                  }`}
-                >
-                  <FaCalendar className={theme === 'dark' ? 'text-white/60' : 'text-black/60'} />
-                  <span>{new Date().toLocaleDateString()}</span>
-                </button>
-
-                {/* Calendar Popup */}
-                {showCalendar && (
-                  <motion.div
-                    ref={calendarRef}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className={`absolute right-0 top-full mt-2 p-4 rounded-xl shadow-xl z-50 ${
-                      theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                    } border ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
-                    style={{ width: '300px' }}
-                  >
-                    <div className="grid grid-cols-7 gap-1">
-                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                        <div
-                          key={day}
-                          className={`text-center text-sm font-medium p-2 ${
-                            theme === 'dark' ? 'text-white/60' : 'text-black/60'
-                          }`}
-                        >
-                          {day}
-                        </div>
-                      ))}
-                      {Array.from({ length: 35 }, (_, i) => {
-                        const date = new Date();
-                        date.setDate(1);
-                        const firstDay = date.getDay();
-                        const currentDate = i - firstDay + 1;
-                        const isCurrentMonth = currentDate > 0 && currentDate <= new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-                        const isToday = currentDate === new Date().getDate() && isCurrentMonth;
-
-                        return (
-                          <div
-                            key={i}
-                            className={`text-center p-2 rounded-lg cursor-pointer transition-colors ${
-                              isCurrentMonth
-                                ? isToday
-                                  ? `bg-${accentColor} text-white`
-                                  : theme === 'dark'
-                                  ? 'text-white hover:bg-white/10'
-                                  : 'text-black hover:bg-black/5'
-                                : theme === 'dark'
-                                ? 'text-white/20'
-                                : 'text-black/20'
-                            }`}
-                          >
-                            {isCurrentMonth ? currentDate : ''}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
-              {isEditing ? (
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className={`w-full h-full resize-none focus:outline-none ${
-                    theme === 'dark' ? 'bg-transparent text-white' : 'bg-transparent text-black'
-                  } [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20`}
-                  style={{ height: 'calc(100vh - 12rem)' }}
-                />
+      <div className="flex-1 flex flex-col">
+        {/* Toolbar */}
+        <div className="h-14 border-b border-white/10 flex items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="md:hidden p-2 text-white/60 hover:text-white/90 transition-colors"
+            >
+              {showSidebar ? (
+                <FaTimes className="w-4 h-4" />
               ) : (
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown>{currentNote.content}</ReactMarkdown>
-                </div>
+                <FaBars className="w-4 h-4" />
               )}
+            </button>
+            <input
+              type="text"
+              value={selectedNote?.title || ''}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Note title"
+              className="bg-transparent text-white/90 text-lg font-semibold placeholder-white/40 focus:outline-none"
+              disabled={!selectedNote}
+            />
+          </div>
+          {selectedNote && (
+            <button
+              onClick={() => handleDeleteNote(selectedNote.id)}
+              className="p-2 text-white/60 hover:text-red-500 transition-colors"
+            >
+              <FaTrash className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Editor */}
+        <div className="flex-1 overflow-hidden">
+          {selectedNote ? (
+            <MDXEditor
+              value={selectedNote.content}
+              onChange={(value) => handleContentChange(value || '')}
+              preview="edit"
+              className="h-full bg-transparent"
+              previewOptions={{
+                rehypePlugins: [[rehypeSanitize]],
+              }}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-white/40">
+              Select a note to edit
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
