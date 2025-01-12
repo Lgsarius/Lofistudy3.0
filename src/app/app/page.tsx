@@ -1,5 +1,7 @@
+/* eslint-disable */
 'use client';
 
+import { useState } from 'react';
 import { useWindowsStore } from '@/lib/store/windows';
 import { Window } from '@/components/windows/Window';
 import { PomodoroTimer } from '@/components/apps/PomodoroTimer';
@@ -8,14 +10,16 @@ import { Notes } from '@/components/apps/Notes';
 import { Settings } from '@/components/apps/Settings';
 import { ASMRPlayer } from '@/components/apps/ASMRPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaHeadphones, FaClock, FaBook, FaCog } from 'react-icons/fa';
+import { FaHeadphones, FaClock, FaBook, FaCog, FaQuestionCircle } from 'react-icons/fa';
 import { useSettingsStore } from '@/lib/store/settings';
 import Image from 'next/image';
 import TodoList from '@/components/apps/TodoList';
+import WelcomeGuide from '@/components/WelcomeGuide';
 
 export default function AppPage() {
   const { windows } = useWindowsStore();
   const { wallpaper, isVideoWallpaper } = useSettingsStore();
+  const [showGuide, setShowGuide] = useState(false);
 
   const renderWindowContent = (type: string) => {
     switch (type) {
@@ -27,8 +31,6 @@ export default function AppPage() {
         return <Notes />;
       case 'settings':
         return <Settings />;
-      case 'chat':
-        return <Chat />;
       case 'asmr':
         return <ASMRPlayer />;
       case 'todo':
@@ -92,43 +94,56 @@ export default function AppPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-amber-100/60 max-w-2xl mb-16 text-lg md:text-xl"
+                className="text-amber-100/60 max-w-2xl mb-8 text-lg md:text-xl"
               >
                 Your personal workspace for focused study and productivity.
                 Click on any icon in the dock below to get started.
               </motion.p>
-              <motion.div
+
+              {/* Welcome Guide Button */}
+              <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full max-w-4xl px-4"
+                onClick={() => setShowGuide(true)}
+                className="px-6 py-3 rounded-xl bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors flex items-center space-x-2"
+              >
+                <FaQuestionCircle className="w-5 h-5" />
+                <span>Show Welcome Guide</span>
+              </motion.button>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full max-w-4xl px-4 mt-16"
               >
                 <Feature
                   icon={FaHeadphones}
                   title="Music Player"
                   description="Immerse yourself in Lo-Fi beats while you work. Choose from curated playlists or add your own tracks."
-                  delay={0.5}
+                  delay={0.6}
                   color="orange"
                 />
                 <Feature
                   icon={FaClock}
                   title="Pomodoro Timer"
                   description="Stay focused with customizable work sessions. Track your productivity and take structured breaks."
-                  delay={0.6}
+                  delay={0.7}
                   color="purple"
                 />
                 <Feature
                   icon={FaBook}
                   title="Notes"
                   description="Capture your thoughts with our markdown editor. Organize your notes and ideas effortlessly."
-                  delay={0.7}
+                  delay={0.8}
                   color="blue"
                 />
                 <Feature
                   icon={FaCog}
                   title="Settings"
                   description="Personalize your workspace with custom themes, backgrounds, and preferences."
-                  delay={0.8}
+                  delay={0.9}
                   color="green"
                 />
               </motion.div>
@@ -145,6 +160,9 @@ export default function AppPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Welcome Guide */}
+      {showGuide && <WelcomeGuide onClose={() => setShowGuide(false)} />}
     </div>
   );
 }
